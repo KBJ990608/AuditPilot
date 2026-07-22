@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import random
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -20,7 +21,7 @@ class SampleBundle:
     subledger: pd.DataFrame
 
 
-def _journal(year: int, voucher: str, date: pd.Timestamp, customer: str | None, amount: int) -> list[dict]:
+def _journal(year: int, voucher: str, date: pd.Timestamp, customer: Optional[str], amount: int) -> list[dict]:
     common = {"전표일자": date, "전표번호": voucher, "거래처": customer, "적요": "상품 매출", "전표유형": "자동"}
     return [
         {**common, "계정코드": "1100", "계정명": "매출채권", "차변": amount, "대변": 0},
@@ -80,7 +81,7 @@ def build_sample_bundle() -> SampleBundle:
     return SampleBundle(current, prior, trial_balance, subledger)
 
 
-def write_sample_files(directory: str | Path) -> list[Path]:
+def write_sample_files(directory: Union[str, Path]) -> list[Path]:
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     bundle = build_sample_bundle()

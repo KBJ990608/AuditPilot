@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -16,8 +17,8 @@ class ValidationItem:
     passed: bool
     message: str
     exception_rows: tuple[int, ...] = ()
-    expected: int | None = None
-    actual: int | None = None
+    expected: Optional[int] = None
+    actual: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -29,7 +30,7 @@ class ValidationReport:
 @dataclass(frozen=True)
 class ComputedValue:
     key: str
-    value: int | float
+    value: Union[int, float]
     display: str
     source: str
 
@@ -56,7 +57,7 @@ class Candidate:
     entity: str
     score: int
     assertions: tuple[str, ...]
-    evidence: dict[str, int | float | str | bool | None]
+    evidence: dict[str, Union[int, float, str, bool, None]]
     source_rows: tuple[int, ...]
 
 

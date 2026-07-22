@@ -1,7 +1,7 @@
 from dataclasses import dataclass, replace
 import json
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, Union
 
 import requests
 
@@ -20,7 +20,7 @@ class LLMClient(Protocol):
 
 
 class FixtureClient:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: Union[str, Path]):
         self.path = Path(path)
         self.responses = json.loads(self.path.read_text(encoding="utf-8"))
 

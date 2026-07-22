@@ -1,12 +1,12 @@
-from enum import StrEnum
+from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Union
 
 import pandas as pd
 
 
-class DocumentType(StrEnum):
+class DocumentType(str, Enum):
     CURRENT_GL = "당기원장"
     PRIOR_GL = "전기원장"
     TRIAL_BALANCE = "시산표"
@@ -18,7 +18,7 @@ def normalize_header(value: object) -> str:
     return "".join(ch for ch in str(value).lower() if ch not in " _()\n\t")
 
 
-def read_tabular(source: str | Path | BinaryIO | bytes, sheet_name: str | int = 0) -> pd.DataFrame:
+def read_tabular(source: Union[str, Path, BinaryIO, bytes], sheet_name: Union[str, int] = 0) -> pd.DataFrame:
     if isinstance(source, bytes):
         source = BytesIO(source)
     name = str(getattr(source, "name", source)).lower()

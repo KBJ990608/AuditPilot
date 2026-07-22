@@ -1,6 +1,8 @@
 .venv/
+.venv_local/
 __pycache__/
 *.pyc
 .env
 internal/
 .claude/
+.DS_Store

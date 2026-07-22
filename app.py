@@ -260,8 +260,16 @@ def ensure_assistant_server() -> None:
                     return
                 self._send_json(200, assistant_reply(question))
             except Exception as exc:
+                detail = ""
+                response = getattr(exc, "response", None)
+                if response is not None:
+                    try:
+                        error = response.json().get("error", {})
+                        detail = error.get("message", "") or error.get("code", "")
+                    except Exception:
+                        detail = ""
                 self._send_json(200, {
-                    "answer": f"AI 연결 중 문제가 생겼습니다. API 키와 네트워크 상태를 확인해 주세요. ({type(exc).__name__})",
+                    "answer": f"AI 연결은 됐지만 응답을 받지 못했습니다. {detail or 'API 키, 사용량 한도, 결제 상태를 확인해 주세요.'}",
                     "provider": "error",
                 })
 

@@ -492,24 +492,6 @@ def render_assistant_widget() -> None:
         line-height: 1.45;
         white-space: pre-wrap;
       }
-      #auditpilot-floating-assistant .ap-suggestions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 0 0 9px;
-      }
-      #auditpilot-floating-assistant .ap-suggest {
-        border: 1px solid #fee2e2;
-        border-radius: 999px;
-        padding: 5px 8px;
-        color: #b91c1c;
-        background: #fff7f7;
-        font-size: 11px;
-        cursor: pointer;
-      }
-      #auditpilot-floating-assistant .ap-suggest:hover {
-        background: #fee2e2;
-      }
       #auditpilot-floating-assistant .ap-msg.bot {
         align-self: flex-start;
         background: #f3f4f6;
@@ -586,12 +568,6 @@ def render_assistant_widget() -> None:
       <p class="ap-copy">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
         <div class="ap-msg bot">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</div>
-      </div>
-      <div class="ap-suggestions">
-        <button class="ap-suggest" type="button" data-question="이 프로그램 어떻게 쓰는거야?">사용법</button>
-        <button class="ap-suggest" type="button" data-question="PBC 요청은 어떻게 만들면 돼?">PBC</button>
-        <button class="ap-suggest" type="button" data-question="분석적검토는 뭘 보면 돼?">분석</button>
-        <button class="ap-suggest" type="button" data-question="조서 초안은 어떻게 써?">조서</button>
       </div>
       <form class="ap-chat-form">
         <input class="ap-chat-input" type="text" placeholder="삼일Pwc에게 질문하기" autocomplete="off">
@@ -691,12 +667,6 @@ def render_assistant_widget() -> None:
   chatForm.addEventListener("submit", async function (event) {
     event.preventDefault();
     await sendQuestion(chatInput.value.trim());
-  });
-
-  node.querySelectorAll(".ap-suggest").forEach(function (button) {
-    button.addEventListener("click", async function () {
-      await sendQuestion(button.dataset.question || button.textContent.trim());
-    });
   });
 
   closeButton.addEventListener("click", function () {

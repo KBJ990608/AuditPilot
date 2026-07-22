@@ -399,13 +399,13 @@ def render_assistant_widget() -> None:
   node.setAttribute("aria-label", "AuditPilot AI assistant. Drag to move.");
   node.innerHTML = `
     <div class="ap-bubble">
-      <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
-      <p class="ap-copy">안녕하세요 PWC 챗봇 삼일이입니다! 무엇이든 물어보세요!</p>
+      <div class="ap-name"><span class="ap-dot"></span>삼일Pwc</div>
+      <p class="ap-copy">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
         <div class="ap-msg bot">감사자료, PBC, 클렌징, 분석, 조서 초안에 대해 물어보세요.</div>
       </div>
       <form class="ap-chat-form">
-        <input class="ap-chat-input" type="text" placeholder="삼일이에게 질문하기" autocomplete="off">
+        <input class="ap-chat-input" type="text" placeholder="삼일Pwc에게 질문하기" autocomplete="off">
         <button class="ap-send" type="submit">전송</button>
       </form>
     </div>
@@ -469,7 +469,7 @@ def render_assistant_widget() -> None:
       return "감사인의 판단은 위험평가, 테스트 조건, 예외 해석, 회사 설명의 타당성, 최종 결론에 남아 있어야 해요. AI는 자료 정리와 후보 산출까지만 보조합니다.";
     }
     if (q.includes("안녕") || q.includes("하이") || q.includes("hello")) {
-      return "안녕하세요! 삼일이입니다. PBC 요청, 자료 검증, 분석적검토, 조서 초안 중 궁금한 걸 물어보세요.";
+      return "안녕하세요! 삼일Pwc 챗봇입니다. PBC 요청, 자료 검증, 분석적검토, 조서 초안 중 궁금한 걸 물어보세요.";
     }
     return "좋아요. 지금 데모 챗봇이라 감사업무 기준으로 답할게요. 질문을 PBC, 클렌징, 분석적검토, 테스트, 조서 중 하나와 연결해서 물어보면 더 정확히 도와드릴 수 있습니다.";
   }

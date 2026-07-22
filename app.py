@@ -202,7 +202,7 @@ JUDGMENT_BOUNDARIES = [
 ]
 
 ASSISTANT_PORT = int(app_setting("AUDITPILOT_ASSISTANT_PORT", "8765"))
-ASSISTANT_SYSTEM_PROMPT = """당신은 AuditPilot 앱의 챗봇 '삼일Pwc'입니다.
+ASSISTANT_SYSTEM_PROMPT = """당신은 AuditPilot 앱의 챗봇 '삼일이'입니다.
 사용자의 감사 업무 질문에 한국어로 짧고 실무적으로 답합니다.
 주요 범위는 PBC 요청, 자료 클렌징, 표준 스키마 매핑, 분석적검토, 테스트 설계, 조서 초안, 감사인 판단입니다.
 감사 결론을 대신 확정하지 말고, 판단이 필요한 지점과 확인할 증빙을 분명히 말하세요.
@@ -565,12 +565,12 @@ def render_assistant_widget() -> None:
     <div class="ap-bubble">
       <button class="ap-close" type="button" aria-label="삼일이 숨기기">×</button>
       <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
-      <p class="ap-copy">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</p>
+      <p class="ap-copy">안녕하세요 삼일이 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
-        <div class="ap-msg bot">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</div>
+        <div class="ap-msg bot">안녕하세요 삼일이 챗봇입니다! 무엇이든 물어보세요!</div>
       </div>
       <form class="ap-chat-form">
-        <input class="ap-chat-input" type="text" placeholder="삼일Pwc에게 질문하기" autocomplete="off">
+        <input class="ap-chat-input" type="text" placeholder="삼일이에게 질문하기" autocomplete="off">
         <button class="ap-send" type="submit">전송</button>
       </form>
     </div>

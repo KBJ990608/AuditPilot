@@ -349,8 +349,8 @@ def render_assistant_widget() -> None:
   style.textContent = `
       #auditpilot-floating-assistant {
         position: fixed;
-        right: 16px;
-        bottom: 8px;
+        right: 72px;
+        bottom: 72px;
         z-index: 2147483000;
         display: flex;
         flex-direction: row;
@@ -588,6 +588,7 @@ def render_assistant_widget() -> None:
         80% { transform: translateY(-5px) rotate(-2deg); }
       }
       @media (max-width: 720px) {
+        #auditpilot-floating-assistant { right: 12px; bottom: 14px; }
         #auditpilot-floating-assistant .ap-bubble { width: 238px; }
         #auditpilot-floating-assistant .ap-character-wrap { width: 78px; height: 104px; }
         #auditpilot-floating-assistant img { width: 72px; height: 98px; }

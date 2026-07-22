@@ -581,6 +581,12 @@ def render_assistant_widget() -> None:
 
   function localAssistantAnswer(text) {
     const q = text.toLowerCase();
+    if (/^[a-z]{1,3}$/i.test(text.trim())) {
+      return "영문으로 짧게 입력된 것 같아요. PBC, 클렌징, 분석, 조서처럼 궁금한 탭 이름을 한글로 물어보면 바로 안내할게요.";
+    }
+    if (q.includes("ai") || q.includes("gpt") || q.includes("api") || q.includes("연결") || q.includes("끊")) {
+      return "끊긴 게 아니에요. 지금 삼일이는 속도를 위해 GPT API 대신 무료 즉시 응답 방식으로 안내하고 있어요. PBC, 클렌징, 분석, 조서 질문은 바로 답할 수 있습니다.";
+    }
     if (q.includes("사용") || q.includes("어떻게") || q.includes("방법") || q.includes("뭐하는")) {
       return "③ 업로드·매핑에서 데모 샘플을 불러온 뒤 ④ 검증, ⑤ 분석, ⑥ 문서화 순서로 누르면 전체 흐름을 볼 수 있어요.";
     }
@@ -596,7 +602,7 @@ def render_assistant_widget() -> None:
     if (q.includes("조서") || q.includes("문서") || q.includes("결론") || q.includes("리뷰")) {
       return "문서화 단계는 수행 절차와 숫자 근거를 조서 초안으로 정리합니다. 최종 결론과 승인은 감사인이 남기도록 설계했습니다.";
     }
-    if (q.includes("ai") || q.includes("챗봇") || q.includes("삼일")) {
+    if (q.includes("챗봇") || q.includes("삼일")) {
       return "삼일이는 데모 흐름을 빠르게 안내하는 무료 즉시 응답 챗봇입니다. 감사 판단은 대신하지 않고 확인할 절차와 증빙을 짚어줍니다.";
     }
     if (q.includes("업로드") || q.includes("매핑") || q.includes("엑셀") || q.includes("원장") || q.includes("gl")) {

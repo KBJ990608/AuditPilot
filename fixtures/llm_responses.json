@@ -1,0 +1,17 @@
+{
+  "pbc_ar": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"매출채권 명세서는 기말 잔액의 실재성·평가 및 기간귀속 검토에 사용됩니다. 기준일 현재 거래처별 잔액과 합계가 포함된 엑셀 파일을 제출해 주십시오."},
+  "mapping_unknown_headers": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[{\"source\":\"Posting Dt\",\"target\":\"전표일자\",\"confidence\":0.97,\"reason\":\"posting date\"},{\"source\":\"Amt(CR)\",\"target\":\"대변\",\"confidence\":0.94,\"reason\":\"credit amount\"}]}"},
+  "candidate_daesung": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"narrative\":\"대성물산의 12월 매출이 전기 대비 크게 증가해 기간귀속과 발생사실에 대한 추가 확인이 필요합니다.\",\"used_keys\":[]}"},
+  "query_daesung": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"question\":\"대성물산의 12월 매출은 280,000,000원으로 전기 대비 +180.0% 증가했습니다. 주요 거래의 출하·검수 조건과 매출 인식 시점을 확인할 수 있는 자료를 제출해 주십시오.\",\"used_keys\":[\"customer-01.current_amount\",\"customer-01.change_rate\"]}"},
+  "workpaper_ar": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"narrative\":\"대성물산 매출은 280,000,000원으로 전기 대비 +180.0% 증가하여 추가 확인이 필요합니다.\",\"used_keys\":[\"customer-01.current_amount\",\"customer-01.change_rate\"]}"},
+  "golden-map-1": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[]}"},
+  "golden-map-2": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[]}"},
+  "golden-map-3": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[]}"},
+  "golden-map-4": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[]}"},
+  "golden-map-5": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"suggestions\":[]}"},
+  "golden-doc-1": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"narrative\":\"추가 확인이 필요합니다.\",\"used_keys\":[]}"},
+  "golden-doc-2": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"narrative\":\"근거 자료를 확인해야 합니다.\",\"used_keys\":[]}"},
+  "golden-doc-3": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"narrative\":\"회사 설명과 수치의 정합성을 확인합니다.\",\"used_keys\":[]}"},
+  "golden-query-1": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"question\":\"변동 원인과 증빙을 제출해 주십시오.\",\"used_keys\":[]}"},
+  "golden-query-2": {"provider":"fixture","model":"portfolio-cache-v1","cached":true,"content":"{\"question\":\"거래 조건과 인식 시점을 설명해 주십시오.\",\"used_keys\":[]}"}
+}

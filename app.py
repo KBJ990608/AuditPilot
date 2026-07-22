@@ -25,6 +25,7 @@ FIXTURE = FixtureClient(ROOT / "fixtures/llm_responses.json")
 ALIASES = json.loads((ROOT / "config/header_aliases.json").read_text(encoding="utf-8"))
 BOT_IMAGE = base64.b64encode((ROOT / "assets/auditpilot_bot.png").read_bytes()).decode("ascii")
 LOGO_PATH = ROOT / "assets/logo2.svg"
+LOGO_IMAGE = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
 
 
 def read_local_env() -> dict:
@@ -66,8 +67,15 @@ st.markdown("""
 [data-testid="stMetricValue"] {font-size: 1.55rem}
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
-.app-logo-row [data-testid="stImage"] {margin-top:.15rem}
-.app-logo-row [data-testid="stHeading"] h1 {font-size:2.85rem; line-height:1.05}
+.app-logo-row {display:flex; align-items:center; gap:1.25rem; margin:.15rem 0 .35rem}
+.app-logo-row img {width:126px; height:auto; display:block}
+.app-logo-row .app-title-text {margin:0; color:#2f313d; font-size:2.85rem; font-weight:800; line-height:1; letter-spacing:0}
+.sr-title {position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden}
+@media (max-width: 720px) {
+  .app-logo-row {gap:.8rem}
+  .app-logo-row img {width:96px}
+  .app-logo-row .app-title-text {font-size:2.1rem}
+}
 </style>""", unsafe_allow_html=True)
 
 DEFAULTS = {
@@ -789,11 +797,17 @@ def render_assistant_widget() -> None:
     )
 
 
-st.markdown('<div class="app-logo-row">', unsafe_allow_html=True)
-logo_col, title_col = st.columns([0.08, 0.92], vertical_alignment="center")
-with logo_col:
-    st.image(str(LOGO_PATH), width=104)
-with title_col:
+st.markdown(
+    f"""
+    <div class="app-logo-row" aria-label="AuditPilot">
+      <img src="data:image/svg+xml;base64,{LOGO_IMAGE}" alt="PwC logo">
+      <div class="app-title-text">AuditPilot</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown('<div class="sr-title">', unsafe_allow_html=True)
+with st.container():
     st.title("AuditPilot")
 st.markdown("</div>", unsafe_allow_html=True)
 st.caption("감사자료 수집부터 클렌징, 분석, 테스트, 문서화까지 반복 업무를 줄이고 감사인 판단에 집중하도록 돕는 Assistant")

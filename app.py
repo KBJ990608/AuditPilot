@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -15,7 +14,7 @@ from auditpilot.core.reviewer import review_numbers
 from auditpilot.core.validate import build_validation_report
 from auditpilot.core.workpaper import build_workpaper, render_workpaper_markdown
 from auditpilot.data.make_sample import SampleBundle, build_sample_bundle
-from auditpilot.llm.client import FixtureClient, OpenAICompatibleClient
+from auditpilot.llm.client import FixtureClient
 from auditpilot.state import can_approve_query, can_approve_workpaper, can_validate, invalidate_downstream
 
 ROOT = Path(__file__).parent
@@ -24,35 +23,6 @@ ALIASES = json.loads((ROOT / "config/header_aliases.json").read_text(encoding="u
 BOT_IMAGE = base64.b64encode((ROOT / "assets/auditpilot_bot.png").read_bytes()).decode("ascii")
 LOGO_PATH = ROOT / "assets/logo2.svg"
 LOGO_IMAGE = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
-
-
-def read_local_env() -> dict:
-    env_path = ROOT / ".env"
-    if not env_path.exists():
-        return {}
-    values = {}
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        values[key.strip()] = value.strip().strip('"').strip("'")
-    return values
-
-
-LOCAL_ENV = read_local_env()
-
-
-def app_setting(name: str, default: str = "") -> str:
-    if os.getenv(name):
-        return os.getenv(name, "")
-    if LOCAL_ENV.get(name):
-        return LOCAL_ENV[name]
-    try:
-        value = st.secrets.get(name)
-        return str(value) if value else default
-    except Exception:
-        return default
 
 st.set_page_config(page_title="AuditPilot", page_icon="🧭", layout="wide")
 st.markdown("""
@@ -209,72 +179,6 @@ JUDGMENT_BOUNDARIES = [
     "승인 게이트를 통과하기 전에는 질의 문안과 조서 결론이 외부 발송 또는 확정되지 않습니다.",
 ]
 
-ASSISTANT_SYSTEM_PROMPT = """당신은 AuditPilot 앱의 챗봇 '삼일이'입니다.
-사용자의 감사 업무 질문에 한국어로 짧고 실무적으로 답합니다.
-주요 범위는 PBC 요청, 자료 클렌징, 표준 스키마 매핑, 분석적검토, 테스트 설계, 조서 초안, 감사인 판단입니다.
-감사 결론을 대신 확정하지 말고, 판단이 필요한 지점과 확인할 증빙을 분명히 말하세요.
-법률·회계 기준의 최종 해석이나 감사의견을 단정하지 마세요.
-원본 원장이나 민감정보를 외부로 보내지 말라는 주의를 필요할 때 포함하세요.
-답변은 반드시 2문장 이내, 220자 이내로 짧게 작성하세요."""
-
-
-def assistant_reply(question: str) -> dict:
-    api_key = app_setting("OPENAI_API_KEY")
-    if not api_key:
-        return {
-            "answer": "아직 API 키가 연결되지 않았어요. 프로젝트 폴더의 `.env`에 `OPENAI_API_KEY=키값`을 넣고 앱을 재시작하면 실제 AI로 답합니다.",
-            "provider": "demo",
-        }
-    client = OpenAICompatibleClient(
-        app_setting("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-        api_key,
-        app_setting("OPENAI_MODEL", "gpt-4o-mini"),
-        timeout=12,
-        max_tokens=140,
-    )
-    response = client.generate("assistant_chat", ASSISTANT_SYSTEM_PROMPT, question[:800])
-    return {"answer": response.content, "provider": response.provider, "model": response.model}
-
-
-def safe_assistant_reply(question: str) -> dict:
-    try:
-        return assistant_reply(question)
-    except Exception as exc:
-        detail = ""
-        response = getattr(exc, "response", None)
-        if response is not None:
-            try:
-                error = response.json().get("error", {})
-                detail = error.get("message", "") or error.get("code", "")
-            except Exception:
-                detail = ""
-        if "quota" in detail.lower() or "billing" in detail.lower():
-            detail = "현재 API 사용량 한도 또는 결제 설정 때문에 응답을 받을 수 없습니다."
-        return {
-            "answer": f"AI 연결은 됐지만 응답을 받지 못했습니다. {detail or 'API 키, 사용량 한도, 결제 상태를 확인해 주세요.'}",
-            "provider": "error",
-        }
-
-
-def assistant_result_from_query() -> dict:
-    question = str(st.query_params.get("assistant_question", "")).strip()
-    nonce = str(st.query_params.get("assistant_nonce", "")).strip()
-    if not question:
-        return {"question": "", "answer": "", "nonce": ""}
-    if st.session_state.get("assistant_last_nonce") != nonce:
-        st.session_state.assistant_last_nonce = nonce
-        cache = st.session_state.setdefault("assistant_answer_cache", {})
-        cache_key = question.casefold()
-        if cache_key not in cache:
-            cache[cache_key] = safe_assistant_reply(question)
-        st.session_state.assistant_last_result = cache[cache_key]
-    result = st.session_state.get("assistant_last_result", {})
-    return {"question": question, "answer": str(result.get("answer", "")), "nonce": nonce}
-
-
-ASSISTANT_QUERY_RESULT = assistant_result_from_query()
-
-
 def load_bundle(bundle: SampleBundle) -> None:
     st.session_state.bundle = bundle
     st.session_state.mapping_confirmed = False
@@ -303,16 +207,10 @@ def uploaded_bundle(files) -> SampleBundle:
 
 
 def render_assistant_widget() -> None:
-    server_question = json.dumps(ASSISTANT_QUERY_RESULT["question"], ensure_ascii=False)
-    server_answer = json.dumps(ASSISTANT_QUERY_RESULT["answer"], ensure_ascii=False)
-    server_nonce = json.dumps(ASSISTANT_QUERY_RESULT["nonce"], ensure_ascii=False)
     html = """
 <script>
 (function () {
   const botImage = "__BOT_IMAGE__";
-  const serverQuestion = __SERVER_QUESTION__;
-  const serverAnswer = __SERVER_ANSWER__;
-  const serverNonce = __SERVER_NONCE__;
   let doc;
   try {
     doc = window.parent.document;
@@ -681,11 +579,30 @@ def render_assistant_widget() -> None:
     });
   }
 
-  function requestAssistant(text) {
-    const url = new URL(parentWindow.location.href);
-    url.searchParams.set("assistant_question", text);
-    url.searchParams.set("assistant_nonce", Date.now().toString());
-    parentWindow.location.href = url.toString();
+  function localAssistantAnswer(text) {
+    const q = text.toLowerCase();
+    if (q.includes("사용") || q.includes("어떻게") || q.includes("방법") || q.includes("뭐하는")) {
+      return "③ 업로드·매핑에서 데모 샘플을 불러온 뒤 ④ 검증, ⑤ 분석, ⑥ 문서화 순서로 누르면 전체 흐름을 볼 수 있어요.";
+    }
+    if (q.includes("pbc") || q.includes("자료요청") || q.includes("요청")) {
+      return "PBC 탭에서 계정을 고르면 요청자료, 감사주장, 수행절차가 연결됩니다. 요청 목적이 보이도록 문구를 정리하는 데 초점을 둡니다.";
+    }
+    if (q.includes("클렌징") || q.includes("검증") || q.includes("오류") || q.includes("중복") || q.includes("결측")) {
+      return "클렌징·검증은 중복, 결측, 차대변 불일치, 기간 외 거래를 먼저 잡습니다. 예외는 삭제하지 않고 감사인이 판단하도록 남깁니다.";
+    }
+    if (q.includes("분석") || q.includes("ar") || q.includes("증감") || q.includes("이상치") || q.includes("추이")) {
+      return "분석·테스트는 전기 대비 변동, 월별 추이, 거래처별 변동을 보고 확인 필요 후보를 뽑습니다. 후보는 결론이 아니라 추가 질문 대상입니다.";
+    }
+    if (q.includes("조서") || q.includes("문서") || q.includes("결론") || q.includes("리뷰")) {
+      return "문서화 단계는 수행 절차와 숫자 근거를 조서 초안으로 정리합니다. 최종 결론과 승인은 감사인이 남기도록 설계했습니다.";
+    }
+    if (q.includes("ai") || q.includes("챗봇") || q.includes("삼일")) {
+      return "삼일이는 데모 흐름을 빠르게 안내하는 무료 즉시 응답 챗봇입니다. 감사 판단은 대신하지 않고 확인할 절차와 증빙을 짚어줍니다.";
+    }
+    if (q.includes("업로드") || q.includes("매핑") || q.includes("엑셀") || q.includes("원장") || q.includes("gl")) {
+      return "업로드·매핑은 회사마다 다른 GL 헤더를 표준 스키마로 맞추는 단계입니다. 자동 제안 후 감사인이 매핑을 확정합니다.";
+    }
+    return "AuditPilot은 PBC, 업로드·매핑, 클렌징·검증, 분석·테스트, 문서화 흐름을 보여주는 감사업무 데모입니다. 궁금한 탭 이름으로 물어보면 바로 안내할게요.";
   }
 
   function compactAnswer(text) {
@@ -698,26 +615,15 @@ def render_assistant_widget() -> None:
     appendMessage("user", text);
     chatInput.value = "";
     chatInput.disabled = true;
-    appendMessage("bot", "답변을 준비하고 있어요...");
-    requestAssistant(text);
-  }
-
-  if (serverQuestion && serverAnswer) {
-    updateChatWithoutMovingCharacter(function () {
-      chatLog.innerHTML = "";
-      const userMessage = doc.createElement("div");
-      userMessage.className = "ap-msg user";
-      userMessage.textContent = serverQuestion;
-      chatLog.appendChild(userMessage);
-      const botMessage = doc.createElement("div");
-      botMessage.className = "ap-msg bot";
-      botMessage.textContent = compactAnswer(serverAnswer);
-      chatLog.appendChild(botMessage);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    });
-    if (serverNonce) {
-      parentWindow.history.replaceState(null, "", parentWindow.location.pathname + parentWindow.location.hash);
-    }
+    const pending = appendMessage("bot", "바로 확인해드릴게요.");
+    parentWindow.setTimeout(function () {
+      updateChatWithoutMovingCharacter(function () {
+        pending.textContent = compactAnswer(localAssistantAnswer(text));
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
+      chatInput.disabled = false;
+      chatInput.focus();
+    }, 120);
   }
 
   chatForm.addEventListener("submit", async function (event) {
@@ -762,10 +668,7 @@ def render_assistant_widget() -> None:
 """
     components.html(
         html
-        .replace("__BOT_IMAGE__", BOT_IMAGE)
-        .replace("__SERVER_QUESTION__", server_question)
-        .replace("__SERVER_ANSWER__", server_answer)
-        .replace("__SERVER_NONCE__", server_nonce),
+        .replace("__BOT_IMAGE__", BOT_IMAGE),
         height=0,
     )
 

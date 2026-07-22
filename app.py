@@ -597,7 +597,7 @@ def render_assistant_widget() -> None:
       <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
       <p class="ap-copy">안녕하세요 삼일이 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
-        <div class="ap-msg bot">안녕하세요 삼일이 챗봇입니다! 무엇이든 물어보세요!</div>
+        <div class="ap-msg bot">안녕하세요 삼일이입니다! 무엇이든 물어보세요. 글이 가리면 저를 드래그해 옮길 수 있어요.</div>
       </div>
       <form class="ap-chat-form">
         <input class="ap-chat-input" type="text" placeholder="삼일이에게 질문하기" autocomplete="off">

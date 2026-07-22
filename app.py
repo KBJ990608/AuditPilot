@@ -360,6 +360,9 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant.ap-hidden .ap-character-wrap {
         cursor: pointer;
       }
+      #auditpilot-floating-assistant.ap-hidden .ap-reopen-hint {
+        display: block;
+      }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
         order: 2;
@@ -369,6 +372,38 @@ def render_assistant_widget() -> None:
         align-items: flex-end;
         justify-content: center;
         cursor: grab;
+      }
+      #auditpilot-floating-assistant .ap-reopen-hint {
+        display: none;
+        position: absolute;
+        right: 78px;
+        bottom: 54px;
+        z-index: 2;
+        width: max-content;
+        max-width: 140px;
+        padding: 6px 9px;
+        border: 1px solid #fee2e2;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .94);
+        color: #b91c1c;
+        box-shadow: 0 8px 18px rgba(17, 24, 39, .10);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      #auditpilot-floating-assistant .ap-reopen-hint::after {
+        content: "";
+        position: absolute;
+        right: -4px;
+        top: 50%;
+        width: 8px;
+        height: 8px;
+        border-right: 1px solid #fee2e2;
+        border-top: 1px solid #fee2e2;
+        background: rgba(255, 255, 255, .94);
+        transform: translateY(-50%) rotate(45deg);
       }
       #auditpilot-floating-assistant .ap-character-wrap::after {
         content: "";
@@ -567,6 +602,7 @@ def render_assistant_widget() -> None:
       </form>
     </div>
     <div class="ap-character-wrap" title="드래그해서 위치 이동">
+      <span class="ap-reopen-hint">클릭하면 채팅 열림</span>
       <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
   `;

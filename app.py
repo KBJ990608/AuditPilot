@@ -212,16 +212,19 @@ def render_assistant_widget() -> None:
   const existing = doc.getElementById("auditpilot-floating-assistant");
   if (existing) existing.remove();
 
-  if (!doc.getElementById("auditpilot-floating-assistant-style")) {
-    const style = doc.createElement("style");
-    style.id = "auditpilot-floating-assistant-style";
-    style.textContent = `
+  const existingStyle = doc.getElementById("auditpilot-floating-assistant-style");
+  if (existingStyle) existingStyle.remove();
+
+  const style = doc.createElement("style");
+  style.id = "auditpilot-floating-assistant-style";
+  style.textContent = `
       #auditpilot-floating-assistant {
         position: fixed;
         right: 24px;
         bottom: 24px;
         z-index: 2147483000;
         display: flex;
+        flex-direction: row;
         align-items: flex-end;
         gap: 10px;
         user-select: none;
@@ -231,6 +234,7 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant.ap-dragging .ap-character-wrap { cursor: grabbing; }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
+        order: 2;
         width: 96px;
         height: 132px;
         display: flex;
@@ -265,6 +269,7 @@ def render_assistant_widget() -> None:
       }
       #auditpilot-floating-assistant .ap-bubble {
         position: relative;
+        order: 1;
         width: 300px;
         margin-bottom: 22px;
         padding: 10px 12px;
@@ -390,9 +395,8 @@ def render_assistant_widget() -> None:
         #auditpilot-floating-assistant .ap-character-wrap { width: 78px; height: 104px; }
         #auditpilot-floating-assistant img { width: 72px; height: 98px; }
       }
-    `;
-    doc.head.appendChild(style);
-  }
+  `;
+  doc.head.appendChild(style);
 
   const node = doc.createElement("div");
   node.id = "auditpilot-floating-assistant";

@@ -2,11 +2,11 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 
-def test_app_renders_six_tabs_without_exception():
+def test_app_renders_tabs_without_exception():
     app = AppTest.from_file("app.py", default_timeout=20).run()
     assert not app.exception
     assert len(app.tabs) == 6
-    assert app.title[0].value == "AuditPilot"
+    assert any("app-logo-row" in item.value and "AuditPilot" in item.value for item in app.markdown)
 
 
 @pytest.mark.parametrize("rehearsal", range(5))

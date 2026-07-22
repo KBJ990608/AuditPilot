@@ -67,14 +67,13 @@ st.markdown("""
 [data-testid="stMetricValue"] {font-size: 1.55rem}
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
-.app-logo-row {display:flex; align-items:center; gap:1.25rem; margin:.15rem 0 .35rem}
+.app-logo-row {display:flex; align-items:center; gap:.35rem; margin:.15rem 0 .35rem}
 .app-logo-row img {width:126px; height:auto; display:block}
-.app-logo-row .app-title-text {margin:0; color:#2f313d; font-size:2.85rem; font-weight:800; line-height:1; letter-spacing:0}
-.sr-title {position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden}
+.app-logo-row .app-title-text {margin:0 0 0 -1.45rem; color:#2f313d; font-size:2.85rem; font-weight:800; line-height:1; letter-spacing:0}
 @media (max-width: 720px) {
-  .app-logo-row {gap:.8rem}
+  .app-logo-row {gap:.25rem}
   .app-logo-row img {width:96px}
-  .app-logo-row .app-title-text {font-size:2.1rem}
+  .app-logo-row .app-title-text {font-size:2.1rem; margin-left:-.85rem}
 }
 </style>""", unsafe_allow_html=True)
 
@@ -793,10 +792,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.markdown('<div class="sr-title">', unsafe_allow_html=True)
-with st.container():
-    st.title("AuditPilot")
-st.markdown("</div>", unsafe_allow_html=True)
 st.caption("감사자료 수집부터 클렌징, 분석, 테스트, 문서화까지 반복 업무를 줄이고 감사인 판단에 집중하도록 돕는 Assistant")
 render_assistant_widget()
 materiality = 50_000_000

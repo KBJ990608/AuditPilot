@@ -389,6 +389,7 @@ def render_assistant_widget() -> None:
         animation: apBotPulse 1.8s ease-in-out infinite;
       }
       #auditpilot-floating-assistant .ap-copy {
+        display: none;
         margin: 0;
         font-size: 12px;
         line-height: 1.45;
@@ -504,7 +505,7 @@ def render_assistant_widget() -> None:
       <div class="ap-name"><span class="ap-dot"></span>삼일Pwc</div>
       <p class="ap-copy">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
-        <div class="ap-msg bot">궁금한 걸 짧게 물어보세요. 아래 제안도 눌러볼 수 있어요.</div>
+        <div class="ap-msg bot">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</div>
       </div>
       <div class="ap-suggestions">
         <button class="ap-suggest" type="button" data-question="이 프로그램 어떻게 쓰는거야?">사용법</button>

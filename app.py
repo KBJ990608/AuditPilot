@@ -1,3 +1,4 @@
+import base64
 import json
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from auditpilot.state import can_approve_query, can_approve_workpaper, can_valid
 ROOT = Path(__file__).parent
 FIXTURE = FixtureClient(ROOT / "fixtures/llm_responses.json")
 ALIASES = json.loads((ROOT / "config/header_aliases.json").read_text(encoding="utf-8"))
+BOT_IMAGE = base64.b64encode((ROOT / "assets/auditpilot_bot.png").read_bytes()).decode("ascii")
 
 st.set_page_config(page_title="AuditPilot", page_icon="🧭", layout="wide")
 st.markdown("""
@@ -30,6 +32,14 @@ st.markdown("""
 [data-testid="stMetricValue"] {font-size: 1.55rem}
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
+.bot-strip {display:flex; align-items:center; gap:1rem; margin:.8rem 0 1.25rem; padding:.9rem 1rem; border:1px solid #e5e7eb; border-radius:.6rem; background:#fff}
+.bot-strip img {width:76px; height:76px; object-fit:cover; border-radius:50%; border:1px solid #e5e7eb}
+.bot-name {font-weight:700; color:#111827; margin-bottom:.15rem}
+.bot-copy {color:#6b7280; margin:0; line-height:1.55}
+@media (max-width: 640px) {
+    .bot-strip {align-items:flex-start}
+    .bot-strip img {width:60px; height:60px}
+}
 </style>""", unsafe_allow_html=True)
 
 DEFAULTS = {
@@ -196,6 +206,15 @@ def uploaded_bundle(files) -> SampleBundle:
 
 st.title("AuditPilot")
 st.caption("감사자료 수집부터 클렌징, 분석, 테스트, 문서화까지 반복 업무를 줄이고 감사인 판단에 집중하도록 돕는 Assistant")
+st.markdown(f"""
+<div class="bot-strip">
+    <img src="data:image/png;base64,{BOT_IMAGE}" alt="AuditPilot AI assistant">
+    <div>
+        <div class="bot-name">AuditPilot AI Assistant</div>
+        <p class="bot-copy">자료 정리, 후보 산출, 질의·조서 초안 작성을 돕습니다. 위험평가와 최종 판단은 감사인이 남깁니다.</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 materiality = 50_000_000
 
 tab_bottleneck, tab_pbc, tab_upload, tab_validate, tab_analytics, tab_workpaper = st.tabs([

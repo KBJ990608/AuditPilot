@@ -1,6 +1,9 @@
 import base64
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
+import threading
 
 import pandas as pd
 import streamlit as st
@@ -14,7 +17,7 @@ from auditpilot.core.reviewer import review_numbers
 from auditpilot.core.validate import build_validation_report
 from auditpilot.core.workpaper import build_workpaper, render_workpaper_markdown
 from auditpilot.data.make_sample import SampleBundle, build_sample_bundle
-from auditpilot.llm.client import FixtureClient
+from auditpilot.llm.client import FixtureClient, OpenAICompatibleClient
 from auditpilot.state import can_approve_query, can_approve_workpaper, can_validate, invalidate_downstream
 
 ROOT = Path(__file__).parent
@@ -169,6 +172,81 @@ JUDGMENT_BOUNDARIES = [
     "승인 게이트를 통과하기 전에는 질의 문안과 조서 결론이 외부 발송 또는 확정되지 않습니다.",
 ]
 
+ASSISTANT_PORT = int(os.getenv("AUDITPILOT_ASSISTANT_PORT", "8765"))
+ASSISTANT_SYSTEM_PROMPT = """당신은 AuditPilot 앱의 챗봇 '삼일Pwc'입니다.
+사용자의 감사 업무 질문에 한국어로 짧고 실무적으로 답합니다.
+주요 범위는 PBC 요청, 자료 클렌징, 표준 스키마 매핑, 분석적검토, 테스트 설계, 조서 초안, 감사인 판단입니다.
+감사 결론을 대신 확정하지 말고, 판단이 필요한 지점과 확인할 증빙을 분명히 말하세요.
+법률·회계 기준의 최종 해석이나 감사의견을 단정하지 마세요.
+원본 원장이나 민감정보를 외부로 보내지 말라는 주의를 필요할 때 포함하세요."""
+
+
+def assistant_reply(question: str) -> dict:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return {
+            "answer": "AI 연결을 하려면 `OPENAI_API_KEY`가 필요합니다. 키를 설정하면 제가 실제 AI 답변으로 바뀝니다. 지금은 데모 응답으로 답할게요: PBC, 클렌징, 분석, 조서 중 어떤 부분이 궁금한지 물어보세요.",
+            "provider": "demo",
+        }
+    client = OpenAICompatibleClient(
+        os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+        api_key,
+        os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        timeout=20,
+    )
+    response = client.generate("assistant_chat", ASSISTANT_SYSTEM_PROMPT, question[:2000])
+    return {"answer": response.content, "provider": response.provider, "model": response.model}
+
+
+def ensure_assistant_server() -> None:
+    if st.session_state.get("assistant_server_started"):
+        return
+
+    class AssistantHandler(BaseHTTPRequestHandler):
+        def _send_json(self, status: int, payload: dict) -> None:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_OPTIONS(self) -> None:
+            self._send_json(200, {"ok": True})
+
+        def do_POST(self) -> None:
+            if self.path != "/assistant":
+                self._send_json(404, {"answer": "지원하지 않는 경로입니다."})
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+                question = str(payload.get("question", "")).strip()
+                if not question:
+                    self._send_json(400, {"answer": "질문을 입력해 주세요."})
+                    return
+                self._send_json(200, assistant_reply(question))
+            except Exception as exc:
+                self._send_json(200, {
+                    "answer": f"AI 연결 중 문제가 생겼습니다. API 키와 네트워크 상태를 확인해 주세요. ({type(exc).__name__})",
+                    "provider": "error",
+                })
+
+        def log_message(self, format: str, *args) -> None:
+            return
+
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", ASSISTANT_PORT), AssistantHandler)
+    except OSError:
+        st.session_state.assistant_server_started = True
+        return
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    st.session_state.assistant_server_started = True
+
 
 def load_bundle(bundle: SampleBundle) -> None:
     st.session_state.bundle = bundle
@@ -198,6 +276,7 @@ def uploaded_bundle(files) -> SampleBundle:
 
 
 def render_assistant_widget() -> None:
+    ensure_assistant_server()
     html = """
 <script>
 (function () {
@@ -455,46 +534,42 @@ def render_assistant_widget() -> None:
     node.style.bottom = "auto";
   }
 
-  function answerQuestion(text) {
-    const q = text.toLowerCase();
-    if (q.includes("pbc") || q.includes("자료") || q.includes("요청")) {
-      return "PBC는 계정별 감사목적과 연결해서 요청하는 게 좋아요. 예를 들어 매출은 원장, 월별 집계, 출하일, 세금계산서일, 매출인식일을 같이 요청하면 컷오프와 증감분석에 바로 쓸 수 있습니다.";
-    }
-    if (q.includes("클렌징") || q.includes("매핑") || q.includes("표준")) {
-      return "클렌징 단계에서는 회사마다 다른 헤더를 표준 컬럼으로 맞추고, 중복·결측·차대변 불일치·기간 외 거래를 먼저 잡는 게 핵심이에요. 매핑 확정은 감사인이 확인해야 합니다.";
-    }
-    if (q.includes("분석") || q.includes("ar") || q.includes("증감") || q.includes("이상")) {
-      return "분석적검토는 전기 대비 증감, 월별 추이, 거래처별 변동을 먼저 보고 질문 후보를 좁히는 절차예요. 숫자가 큰 항목보다 설명이 안 되는 변동을 찾는 게 중요합니다.";
-    }
-    if (q.includes("조서") || q.includes("문서") || q.includes("결론")) {
-      return "조서는 수행절차, 확인한 숫자, 예외 판단, 결론이 이어져야 단단해져요. 저는 초안 구조를 도울 수 있지만 최종 결론은 감사인이 승인해야 합니다.";
-    }
-    if (q.includes("판단") || q.includes("감사인")) {
-      return "감사인의 판단은 위험평가, 테스트 조건, 예외 해석, 회사 설명의 타당성, 최종 결론에 남아 있어야 해요. AI는 자료 정리와 후보 산출까지만 보조합니다.";
-    }
-    if (q.includes("안녕") || q.includes("하이") || q.includes("hello")) {
-      return "안녕하세요! 삼일Pwc 챗봇입니다. PBC 요청, 자료 검증, 분석적검토, 조서 초안 중 궁금한 걸 물어보세요.";
-    }
-    return "좋아요. 지금 데모 챗봇이라 감사업무 기준으로 답할게요. 질문을 PBC, 클렌징, 분석적검토, 테스트, 조서 중 하나와 연결해서 물어보면 더 정확히 도와드릴 수 있습니다.";
-  }
-
   function appendMessage(role, text) {
     const message = doc.createElement("div");
     message.className = "ap-msg " + role;
     message.textContent = text;
     chatLog.appendChild(message);
     chatLog.scrollTop = chatLog.scrollHeight;
+    return message;
   }
 
-  chatForm.addEventListener("submit", function (event) {
+  async function askAssistant(text) {
+    const response = await fetch("http://127.0.0.1:__ASSISTANT_PORT__/assistant", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question: text})
+    });
+    const payload = await response.json();
+    return payload.answer || "답변을 가져오지 못했습니다.";
+  }
+
+  chatForm.addEventListener("submit", async function (event) {
     event.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
     appendMessage("user", text);
     chatInput.value = "";
-    setTimeout(function () {
-      appendMessage("bot", answerQuestion(text));
-    }, 180);
+    chatInput.disabled = true;
+    const pending = appendMessage("bot", "생각 중입니다...");
+    try {
+      pending.textContent = await askAssistant(text);
+    } catch (error) {
+      pending.textContent = "AI 서버에 연결하지 못했습니다. 앱을 새로고침하거나 OPENAI_API_KEY 설정을 확인해 주세요.";
+    } finally {
+      chatInput.disabled = false;
+      chatInput.focus();
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
   });
 
   dragHandle.addEventListener("pointerdown", function (event) {
@@ -524,7 +599,10 @@ def render_assistant_widget() -> None:
 })();
 </script>
 """
-    components.html(html.replace("__BOT_IMAGE__", BOT_IMAGE), height=0)
+    components.html(
+        html.replace("__BOT_IMAGE__", BOT_IMAGE).replace("__ASSISTANT_PORT__", str(ASSISTANT_PORT)),
+        height=0,
+    )
 
 
 st.title("AuditPilot")

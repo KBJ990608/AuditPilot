@@ -580,8 +580,12 @@ def render_assistant_widget() -> None:
   }
 
   function localAssistantAnswer(text) {
+    const raw = text.trim();
     const q = text.toLowerCase();
-    if (/^[a-z]{1,3}$/i.test(text.trim())) {
+    if (["ㅎㅇ", "하이", "안녕", "안녕하세요", "hi", "hello"].includes(q) || /^[ㅎㅋㅠㅜ]+$/.test(raw)) {
+      return "안녕하세요! 삼일이입니다. PBC, 클렌징, 분석, 조서 중 궁금한 걸 물어보면 바로 안내할게요.";
+    }
+    if (/^[a-z]{1,3}$/i.test(raw)) {
       return "영문으로 짧게 입력된 것 같아요. PBC, 클렌징, 분석, 조서처럼 궁금한 탭 이름을 한글로 물어보면 바로 안내할게요.";
     }
     if (q.includes("ai") || q.includes("gpt") || q.includes("api") || q.includes("연결") || q.includes("끊")) {

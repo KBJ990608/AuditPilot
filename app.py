@@ -339,8 +339,8 @@ def render_assistant_widget() -> None:
   style.textContent = `
       #auditpilot-floating-assistant {
         position: fixed;
-        right: 24px;
-        bottom: 24px;
+        right: 16px;
+        bottom: 8px;
         z-index: 2147483000;
         display: flex;
         flex-direction: row;
@@ -400,7 +400,7 @@ def render_assistant_widget() -> None:
         order: 1;
         width: 280px;
         max-width: calc(100vw - 132px);
-        margin-bottom: 22px;
+        margin-bottom: 4px;
         padding: 10px 12px;
         border: 1px solid #e5e7eb;
         border-radius: 12px;

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import pandas as pd
+
 
 @dataclass(frozen=True)
 class MappingResult:
@@ -45,3 +47,38 @@ class ReviewResult:
     mismatches: tuple[NumericToken, ...]
     forbidden: tuple[str, ...]
 
+
+@dataclass(frozen=True)
+class Candidate:
+    candidate_id: str
+    rank: int
+    category: str
+    entity: str
+    score: int
+    assertions: tuple[str, ...]
+    evidence: dict[str, int | float | str | bool | None]
+    source_rows: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class AnalyticsResult:
+    account_change: pd.DataFrame
+    monthly_trend: pd.DataFrame
+    customer_change: pd.DataFrame
+    new_customers: tuple[str, ...]
+    dormant_customers: tuple[str, ...]
+    candidates: tuple[Candidate, ...]
+
+
+@dataclass
+class Workpaper:
+    title: str
+    objective: str
+    source_documents: list[str]
+    procedures: list[str]
+    fluctuations_markdown: str
+    management_explanation: str
+    follow_ups: list[str]
+    provisional_conclusion: str
+    referenced_keys: list[str]
+    approved: bool = False

@@ -1,0 +1,10 @@
+{"id":"golden-map-1","task":"mapping","input":{"header":"Posting Dt"},"expected_keys":["suggestions"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-map-2","task":"mapping","input":{"header":"Amt(CR)"},"expected_keys":["suggestions"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-map-3","task":"mapping","input":{"header":"Customer"},"expected_keys":["suggestions"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-map-4","task":"mapping","input":{"header":"Voucher No"},"expected_keys":["suggestions"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-map-5","task":"mapping","input":{"header":"Entry Type"},"expected_keys":["suggestions"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-doc-1","task":"workpaper","input":{"candidate":"change"},"expected_keys":["narrative","used_keys"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-doc-2","task":"workpaper","input":{"candidate":"new"},"expected_keys":["narrative","used_keys"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-doc-3","task":"workpaper","input":{"candidate":"cutoff"},"expected_keys":["narrative","used_keys"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-query-1","task":"query","input":{"candidate":"change"},"expected_keys":["question","used_keys"],"forbidden_phrases":["문제없음","적정하다"]}
+{"id":"golden-query-2","task":"query","input":{"candidate":"cutoff"},"expected_keys":["question","used_keys"],"forbidden_phrases":["문제없음","적정하다"]}

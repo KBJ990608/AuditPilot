@@ -1,0 +1,11 @@
+{
+  "전표일자": ["전표일", "거래일", "posting date"],
+  "전표번호": ["voucher no", "journal no"],
+  "계정코드": ["acct cd", "account code"],
+  "계정명": ["계정과목", "account name"],
+  "거래처": ["customer", "vendor"],
+  "차변": ["debit amount", "debit"],
+  "대변": ["credit amount", "credit"],
+  "적요": ["description", "memo"],
+  "전표유형": ["entry type", "journal type"]
+}

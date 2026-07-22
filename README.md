@@ -1,5 +1,7 @@
 # AuditPilot
 
+[Demo](https://auditpilot.streamlit.app/) · [GitHub](https://github.com/KBJ990608/AuditPilot)
+
 AuditPilot은 감사자료 수집, 정리, 분석, 테스트, 문서화 과정에서 반복 업무를 줄이고 감사인이 판단에 더 집중할 수 있도록 만든 Streamlit 기반 감사업무 보조 앱입니다.
 
 이 앱은 감사인의 결론을 대신 내리는 도구가 아닙니다. 자료 형식 정리, 검증, 이상치 후보 산출, 질의 문안 작성, 조서 초안 정리처럼 시간이 많이 드는 업무를 보조하고, 최종 판단은 감사인이 승인하도록 설계되어 있습니다.

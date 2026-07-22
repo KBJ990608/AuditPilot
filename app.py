@@ -915,7 +915,15 @@ with tab_analytics:
 with tab_workpaper:
     st.subheader("문서화 지원과 감사인 판단")
     st.caption("AI는 조서 초안과 문장 구조를 돕고, 최종 결론과 승인은 감사인이 남깁니다.")
-    st.dataframe([{"구분": idx + 1, "원칙": text} for idx, text in enumerate(JUDGMENT_BOUNDARIES)], width="stretch", hide_index=True)
+    st.dataframe(
+        [{"구분": str(idx + 1), "원칙": text} for idx, text in enumerate(JUDGMENT_BOUNDARIES)],
+        width=760,
+        hide_index=True,
+        column_config={
+            "구분": st.column_config.TextColumn("구분", width="small"),
+            "원칙": st.column_config.TextColumn("원칙", width="large"),
+        },
+    )
     if st.session_state.analytics_result is None:
         st.warning("분석을 먼저 실행해 주세요.")
     if st.button("조서 초안 생성", disabled=st.session_state.analytics_result is None, type="primary"):

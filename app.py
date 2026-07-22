@@ -218,7 +218,7 @@ def render_assistant_widget() -> None:
     style.textContent = `
       #auditpilot-floating-assistant {
         position: fixed;
-        left: 24px;
+        right: 24px;
         bottom: 24px;
         z-index: 2147483000;
         display: flex;
@@ -344,19 +344,20 @@ def render_assistant_widget() -> None:
       <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
     <div class="ap-bubble">
-      <div class="ap-name"><span class="ap-dot"></span>AuditPilot</div>
-      <p class="ap-copy">자료 정리와 조서 초안을 도와드릴게요. 판단은 감사인이 합니다.</p>
+      <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
+      <p class="ap-copy">안녕하세요 PWC 챗봇 삼일이입니다! 무엇이든 물어보세요!</p>
     </div>
   `;
   doc.body.appendChild(node);
 
   const parentWindow = window.parent;
-  const saved = parentWindow.localStorage.getItem("auditpilotAssistantPosition");
+  const saved = parentWindow.localStorage.getItem("auditpilotAssistantPositionV2");
   if (saved) {
     try {
       const position = JSON.parse(saved);
       node.style.left = position.x + "px";
       node.style.top = position.y + "px";
+      node.style.right = "auto";
       node.style.bottom = "auto";
     } catch (error) {}
   }
@@ -377,6 +378,7 @@ def render_assistant_widget() -> None:
     const y = clamp(clientY - offsetY, 8, Math.max(8, maxY));
     node.style.left = x + "px";
     node.style.top = y + "px";
+    node.style.right = "auto";
     node.style.bottom = "auto";
   }
 
@@ -400,7 +402,7 @@ def render_assistant_widget() -> None:
     node.classList.remove("ap-dragging");
     const rect = node.getBoundingClientRect();
     parentWindow.localStorage.setItem(
-      "auditpilotAssistantPosition",
+      "auditpilotAssistantPositionV2",
       JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) })
     );
   });

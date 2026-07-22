@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import time
+from typing import Union
 
 from auditpilot.llm.client import LLMClient
 
@@ -9,7 +10,7 @@ def _cases(path):
     return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def evaluate_cases(path: str | Path, client: LLMClient) -> dict:
+def evaluate_cases(path: Union[str, Path], client: LLMClient) -> dict:
     cases, rows = _cases(path), []
     started = time.perf_counter()
     for case in cases:
@@ -29,7 +30,7 @@ def evaluate_cases(path: str | Path, client: LLMClient) -> dict:
             "total_latency_ms": round((time.perf_counter() - started) * 1000, 3), "cases": rows}
 
 
-def save_result(result: dict, path: str | Path) -> None:
+def save_result(result: dict, path: Union[str, Path]) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

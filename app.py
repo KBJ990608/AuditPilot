@@ -268,6 +268,8 @@ def ensure_assistant_server() -> None:
                         detail = error.get("message", "") or error.get("code", "")
                     except Exception:
                         detail = ""
+                if "quota" in detail.lower() or "billing" in detail.lower():
+                    detail = "현재 API 사용량 한도 또는 결제 설정 때문에 응답을 받을 수 없습니다."
                 self._send_json(200, {
                     "answer": f"AI 연결은 됐지만 응답을 받지 못했습니다. {detail or 'API 키, 사용량 한도, 결제 상태를 확인해 주세요.'}",
                     "provider": "error",
@@ -397,6 +399,7 @@ def render_assistant_widget() -> None:
         position: relative;
         order: 1;
         width: 280px;
+        max-width: calc(100vw - 132px);
         margin-bottom: 22px;
         padding: 10px 12px;
         border: 1px solid #e5e7eb;
@@ -472,11 +475,14 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant .ap-msg {
         width: fit-content;
         max-width: 92%;
+        box-sizing: border-box;
         padding: 7px 9px;
         border-radius: 10px;
         font-size: 12px;
         line-height: 1.45;
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
       #auditpilot-floating-assistant .ap-msg.bot {
         align-self: flex-start;
@@ -627,8 +633,8 @@ def render_assistant_widget() -> None:
   }
 
   function compactAnswer(text) {
-    if (text.length <= 360) return text;
-    return text.slice(0, 357).trim() + "...";
+    if (text.length <= 220) return text;
+    return text.slice(0, 217).trim() + "...";
   }
 
   async function sendQuestion(text) {

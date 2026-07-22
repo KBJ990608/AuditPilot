@@ -620,16 +620,7 @@ def render_assistant_widget() -> None:
   doc.body.appendChild(node);
 
   const parentWindow = window.parent;
-  const saved = parentWindow.localStorage.getItem("auditpilotAssistantPositionV2");
-  if (saved) {
-    try {
-      const position = JSON.parse(saved);
-      node.style.left = position.x + "px";
-      node.style.top = position.y + "px";
-      node.style.right = "auto";
-      node.style.bottom = "auto";
-    } catch (error) {}
-  }
+  parentWindow.localStorage.removeItem("auditpilotAssistantPositionV2");
 
   let dragging = false;
   let offsetX = 0;
@@ -664,11 +655,7 @@ def render_assistant_widget() -> None:
   }
 
   function saveNodePosition() {
-    const rect = node.getBoundingClientRect();
-    parentWindow.localStorage.setItem(
-      "auditpilotAssistantPositionV2",
-      JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) })
-    );
+    return;
   }
 
   function keepCharacterAt(characterBefore) {

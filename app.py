@@ -341,6 +341,16 @@ def render_assistant_widget() -> None:
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       #auditpilot-floating-assistant.ap-dragging .ap-character-wrap { cursor: grabbing; }
+      #auditpilot-floating-assistant.ap-hidden {
+        gap: 0;
+      }
+      #auditpilot-floating-assistant.ap-hidden .ap-bubble,
+      #auditpilot-floating-assistant.ap-hidden .ap-character-wrap {
+        display: none;
+      }
+      #auditpilot-floating-assistant.ap-hidden .ap-restore {
+        display: inline-flex;
+      }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
         order: 2;
@@ -405,10 +415,50 @@ def render_assistant_widget() -> None:
         display: flex;
         align-items: center;
         gap: 6px;
+        padding-right: 28px;
         margin-bottom: 3px;
         font-size: 13px;
         font-weight: 800;
         color: #111827;
+      }
+      #auditpilot-floating-assistant .ap-close {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 50%;
+        color: #6b7280;
+        background: #f3f4f6;
+        cursor: pointer;
+        font-size: 15px;
+        line-height: 20px;
+      }
+      #auditpilot-floating-assistant .ap-close:hover {
+        color: #111827;
+        background: #e5e7eb;
+      }
+      #auditpilot-floating-assistant .ap-restore {
+        display: none;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid #fee2e2;
+        border-radius: 999px;
+        padding: 9px 12px;
+        color: #111827;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 10px 24px rgba(17, 24, 39, .14);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      #auditpilot-floating-assistant .ap-restore-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #ff4b4b;
+        animation: apBotPulse 1.8s ease-in-out infinite;
       }
       #auditpilot-floating-assistant .ap-dot {
         width: 7px;
@@ -531,6 +581,7 @@ def render_assistant_widget() -> None:
   node.setAttribute("aria-label", "AuditPilot AI assistant. Drag to move.");
   node.innerHTML = `
     <div class="ap-bubble">
+      <button class="ap-close" type="button" aria-label="삼일이 숨기기">×</button>
       <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
       <p class="ap-copy">안녕하세요 삼일Pwc 챗봇입니다! 무엇이든 물어보세요!</p>
       <div class="ap-chat-log" aria-live="polite">
@@ -550,6 +601,7 @@ def render_assistant_widget() -> None:
     <div class="ap-character-wrap" title="드래그해서 위치 이동">
       <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
+    <button class="ap-restore" type="button"><span class="ap-restore-dot"></span>삼일이</button>
   `;
   doc.body.appendChild(node);
 
@@ -569,9 +621,15 @@ def render_assistant_widget() -> None:
   let offsetX = 0;
   let offsetY = 0;
   const dragHandle = node.querySelector(".ap-character-wrap");
+  const closeButton = node.querySelector(".ap-close");
+  const restoreButton = node.querySelector(".ap-restore");
   const chatLog = node.querySelector(".ap-chat-log");
   const chatForm = node.querySelector(".ap-chat-form");
   const chatInput = node.querySelector(".ap-chat-input");
+
+  if (parentWindow.localStorage.getItem("auditpilotAssistantHidden") === "1") {
+    node.classList.add("ap-hidden");
+  }
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -639,6 +697,16 @@ def render_assistant_widget() -> None:
     button.addEventListener("click", async function () {
       await sendQuestion(button.dataset.question || button.textContent.trim());
     });
+  });
+
+  closeButton.addEventListener("click", function () {
+    node.classList.add("ap-hidden");
+    parentWindow.localStorage.setItem("auditpilotAssistantHidden", "1");
+  });
+
+  restoreButton.addEventListener("click", function () {
+    node.classList.remove("ap-hidden");
+    parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
   });
 
   dragHandle.addEventListener("pointerdown", function (event) {

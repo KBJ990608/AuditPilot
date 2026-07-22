@@ -663,6 +663,23 @@ def render_assistant_widget() -> None:
     );
   }
 
+  function keepCharacterAt(characterBefore) {
+    const characterAfter = dragHandle.getBoundingClientRect();
+    const nodeAfter = node.getBoundingClientRect();
+    node.style.left = (nodeAfter.left + characterBefore.left - characterAfter.left) + "px";
+    node.style.top = (nodeAfter.top + characterBefore.top - characterAfter.top) + "px";
+    node.style.right = "auto";
+    node.style.bottom = "auto";
+  }
+
+  function updateChatWithoutMovingCharacter(update) {
+    const characterBefore = dragHandle.getBoundingClientRect();
+    const result = update();
+    keepCharacterAt(characterBefore);
+    saveNodePosition();
+    return result;
+  }
+
   function setBubbleHidden(hidden) {
     const characterBefore = dragHandle.getBoundingClientRect();
     if (hidden) {
@@ -672,22 +689,19 @@ def render_assistant_widget() -> None:
       node.classList.remove("ap-hidden");
       parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
     }
-    const characterAfter = dragHandle.getBoundingClientRect();
-    const nodeAfter = node.getBoundingClientRect();
-    node.style.left = (nodeAfter.left + characterBefore.left - characterAfter.left) + "px";
-    node.style.top = (nodeAfter.top + characterBefore.top - characterAfter.top) + "px";
-    node.style.right = "auto";
-    node.style.bottom = "auto";
+    keepCharacterAt(characterBefore);
     saveNodePosition();
   }
 
   function appendMessage(role, text) {
-    const message = doc.createElement("div");
-    message.className = "ap-msg " + role;
-    message.textContent = text;
-    chatLog.appendChild(message);
-    chatLog.scrollTop = chatLog.scrollHeight;
-    return message;
+    return updateChatWithoutMovingCharacter(function () {
+      const message = doc.createElement("div");
+      message.className = "ap-msg " + role;
+      message.textContent = text;
+      chatLog.appendChild(message);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return message;
+    });
   }
 
   async function askAssistant(text) {
@@ -712,9 +726,16 @@ def render_assistant_widget() -> None:
     chatInput.disabled = true;
     const pending = appendMessage("bot", "생각 중입니다...");
     try {
-      pending.textContent = compactAnswer(await askAssistant(text));
+      const answer = compactAnswer(await askAssistant(text));
+      updateChatWithoutMovingCharacter(function () {
+        pending.textContent = answer;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
     } catch (error) {
-      pending.textContent = "AI 서버에 연결하지 못했습니다. 앱을 새로고침하거나 OPENAI_API_KEY 설정을 확인해 주세요.";
+      updateChatWithoutMovingCharacter(function () {
+        pending.textContent = "AI 서버에 연결하지 못했습니다. 앱을 새로고침하거나 OPENAI_API_KEY 설정을 확인해 주세요.";
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
     } finally {
       chatInput.disabled = false;
       chatInput.focus();

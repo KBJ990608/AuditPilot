@@ -226,10 +226,9 @@ def render_assistant_widget() -> None:
         gap: 10px;
         user-select: none;
         touch-action: none;
-        cursor: grab;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
-      #auditpilot-floating-assistant.ap-dragging { cursor: grabbing; }
+      #auditpilot-floating-assistant.ap-dragging .ap-character-wrap { cursor: grabbing; }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
         width: 96px;
@@ -237,6 +236,7 @@ def render_assistant_widget() -> None:
         display: flex;
         align-items: flex-end;
         justify-content: center;
+        cursor: grab;
       }
       #auditpilot-floating-assistant .ap-character-wrap::after {
         content: "";
@@ -265,7 +265,7 @@ def render_assistant_widget() -> None:
       }
       #auditpilot-floating-assistant .ap-bubble {
         position: relative;
-        max-width: 260px;
+        width: 300px;
         margin-bottom: 22px;
         padding: 10px 12px;
         border: 1px solid #e5e7eb;
@@ -278,12 +278,12 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant .ap-bubble::before {
         content: "";
         position: absolute;
-        left: -7px;
+        right: -7px;
         bottom: 24px;
         width: 12px;
         height: 12px;
-        border-left: 1px solid #e5e7eb;
-        border-bottom: 1px solid #e5e7eb;
+        border-right: 1px solid #e5e7eb;
+        border-top: 1px solid #e5e7eb;
         background: rgba(255, 255, 255, .96);
         transform: rotate(45deg);
       }
@@ -309,6 +309,64 @@ def render_assistant_widget() -> None:
         line-height: 1.45;
         color: #6b7280;
       }
+      #auditpilot-floating-assistant .ap-chat-log {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        max-height: 190px;
+        overflow-y: auto;
+        margin: 8px 0 9px;
+        padding-right: 2px;
+      }
+      #auditpilot-floating-assistant .ap-msg {
+        width: fit-content;
+        max-width: 92%;
+        padding: 7px 9px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+      #auditpilot-floating-assistant .ap-msg.bot {
+        align-self: flex-start;
+        background: #f3f4f6;
+        color: #374151;
+      }
+      #auditpilot-floating-assistant .ap-msg.user {
+        align-self: flex-end;
+        background: #ff4b4b;
+        color: white;
+      }
+      #auditpilot-floating-assistant .ap-chat-form {
+        display: flex;
+        gap: 6px;
+      }
+      #auditpilot-floating-assistant .ap-chat-input {
+        min-width: 0;
+        flex: 1;
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+        padding: 8px 9px;
+        font-size: 12px;
+        outline: none;
+        color: #111827;
+        background: white;
+      }
+      #auditpilot-floating-assistant .ap-chat-input:focus {
+        border-color: #ff4b4b;
+        box-shadow: 0 0 0 2px rgba(255, 75, 75, .14);
+      }
+      #auditpilot-floating-assistant .ap-send {
+        border: 0;
+        border-radius: 9px;
+        padding: 0 10px;
+        font-size: 12px;
+        font-weight: 800;
+        color: white;
+        background: #ff4b4b;
+        cursor: pointer;
+      }
+      #auditpilot-floating-assistant .ap-send:hover { background: #e33f3f; }
       @keyframes apBotFloat {
         0%, 100% { transform: translateY(0) rotate(-1deg); }
         50% { transform: translateY(-8px) rotate(1deg); }
@@ -328,7 +386,7 @@ def render_assistant_widget() -> None:
         80% { transform: translateY(-5px) rotate(-2deg); }
       }
       @media (max-width: 720px) {
-        #auditpilot-floating-assistant .ap-bubble { display: none; }
+        #auditpilot-floating-assistant .ap-bubble { width: 250px; }
         #auditpilot-floating-assistant .ap-character-wrap { width: 78px; height: 104px; }
         #auditpilot-floating-assistant img { width: 72px; height: 98px; }
       }
@@ -340,12 +398,19 @@ def render_assistant_widget() -> None:
   node.id = "auditpilot-floating-assistant";
   node.setAttribute("aria-label", "AuditPilot AI assistant. Drag to move.");
   node.innerHTML = `
-    <div class="ap-character-wrap">
-      <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
-    </div>
     <div class="ap-bubble">
       <div class="ap-name"><span class="ap-dot"></span>삼일이</div>
       <p class="ap-copy">안녕하세요 PWC 챗봇 삼일이입니다! 무엇이든 물어보세요!</p>
+      <div class="ap-chat-log" aria-live="polite">
+        <div class="ap-msg bot">감사자료, PBC, 클렌징, 분석, 조서 초안에 대해 물어보세요.</div>
+      </div>
+      <form class="ap-chat-form">
+        <input class="ap-chat-input" type="text" placeholder="삼일이에게 질문하기" autocomplete="off">
+        <button class="ap-send" type="submit">전송</button>
+      </form>
+    </div>
+    <div class="ap-character-wrap" title="드래그해서 위치 이동">
+      <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
   `;
   doc.body.appendChild(node);
@@ -365,6 +430,10 @@ def render_assistant_widget() -> None:
   let dragging = false;
   let offsetX = 0;
   let offsetY = 0;
+  const dragHandle = node.querySelector(".ap-character-wrap");
+  const chatLog = node.querySelector(".ap-chat-log");
+  const chatForm = node.querySelector(".ap-chat-form");
+  const chatInput = node.querySelector(".ap-chat-input");
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -382,7 +451,49 @@ def render_assistant_widget() -> None:
     node.style.bottom = "auto";
   }
 
-  node.addEventListener("pointerdown", function (event) {
+  function answerQuestion(text) {
+    const q = text.toLowerCase();
+    if (q.includes("pbc") || q.includes("자료") || q.includes("요청")) {
+      return "PBC는 계정별 감사목적과 연결해서 요청하는 게 좋아요. 예를 들어 매출은 원장, 월별 집계, 출하일, 세금계산서일, 매출인식일을 같이 요청하면 컷오프와 증감분석에 바로 쓸 수 있습니다.";
+    }
+    if (q.includes("클렌징") || q.includes("매핑") || q.includes("표준")) {
+      return "클렌징 단계에서는 회사마다 다른 헤더를 표준 컬럼으로 맞추고, 중복·결측·차대변 불일치·기간 외 거래를 먼저 잡는 게 핵심이에요. 매핑 확정은 감사인이 확인해야 합니다.";
+    }
+    if (q.includes("분석") || q.includes("ar") || q.includes("증감") || q.includes("이상")) {
+      return "분석적검토는 전기 대비 증감, 월별 추이, 거래처별 변동을 먼저 보고 질문 후보를 좁히는 절차예요. 숫자가 큰 항목보다 설명이 안 되는 변동을 찾는 게 중요합니다.";
+    }
+    if (q.includes("조서") || q.includes("문서") || q.includes("결론")) {
+      return "조서는 수행절차, 확인한 숫자, 예외 판단, 결론이 이어져야 단단해져요. 저는 초안 구조를 도울 수 있지만 최종 결론은 감사인이 승인해야 합니다.";
+    }
+    if (q.includes("판단") || q.includes("감사인")) {
+      return "감사인의 판단은 위험평가, 테스트 조건, 예외 해석, 회사 설명의 타당성, 최종 결론에 남아 있어야 해요. AI는 자료 정리와 후보 산출까지만 보조합니다.";
+    }
+    if (q.includes("안녕") || q.includes("하이") || q.includes("hello")) {
+      return "안녕하세요! 삼일이입니다. PBC 요청, 자료 검증, 분석적검토, 조서 초안 중 궁금한 걸 물어보세요.";
+    }
+    return "좋아요. 지금 데모 챗봇이라 감사업무 기준으로 답할게요. 질문을 PBC, 클렌징, 분석적검토, 테스트, 조서 중 하나와 연결해서 물어보면 더 정확히 도와드릴 수 있습니다.";
+  }
+
+  function appendMessage(role, text) {
+    const message = doc.createElement("div");
+    message.className = "ap-msg " + role;
+    message.textContent = text;
+    chatLog.appendChild(message);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  chatForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+    appendMessage("user", text);
+    chatInput.value = "";
+    setTimeout(function () {
+      appendMessage("bot", answerQuestion(text));
+    }, 180);
+  });
+
+  dragHandle.addEventListener("pointerdown", function (event) {
     dragging = true;
     node.classList.add("ap-dragging");
     const rect = node.getBoundingClientRect();

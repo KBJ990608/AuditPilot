@@ -343,13 +343,27 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant.ap-dragging .ap-character-wrap { cursor: grabbing; }
       #auditpilot-floating-assistant.ap-hidden {
         gap: 0;
+        right: -58px !important;
+        bottom: 18px !important;
+        left: auto !important;
+        top: auto !important;
       }
-      #auditpilot-floating-assistant.ap-hidden .ap-bubble,
-      #auditpilot-floating-assistant.ap-hidden .ap-character-wrap {
+      #auditpilot-floating-assistant.ap-hidden .ap-bubble {
         display: none;
       }
-      #auditpilot-floating-assistant.ap-hidden .ap-restore {
-        display: inline-flex;
+      #auditpilot-floating-assistant.ap-hidden .ap-character-wrap {
+        display: flex;
+        width: 86px;
+        height: 118px;
+        cursor: pointer;
+      }
+      #auditpilot-floating-assistant.ap-hidden .ap-character-wrap::after {
+        opacity: .16;
+      }
+      #auditpilot-floating-assistant.ap-hidden img {
+        width: 82px;
+        height: 112px;
+        animation: apPeek 2.6s ease-in-out infinite;
       }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
@@ -438,27 +452,6 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant .ap-close:hover {
         color: #111827;
         background: #e5e7eb;
-      }
-      #auditpilot-floating-assistant .ap-restore {
-        display: none;
-        align-items: center;
-        gap: 7px;
-        border: 1px solid #fee2e2;
-        border-radius: 999px;
-        padding: 9px 12px;
-        color: #111827;
-        background: rgba(255, 255, 255, .96);
-        box-shadow: 0 10px 24px rgba(17, 24, 39, .14);
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 800;
-      }
-      #auditpilot-floating-assistant .ap-restore-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #ff4b4b;
-        animation: apBotPulse 1.8s ease-in-out infinite;
       }
       #auditpilot-floating-assistant .ap-dot {
         width: 7px;
@@ -550,6 +543,10 @@ def render_assistant_widget() -> None:
         55% { transform: translateY(-7px) rotate(4deg); }
         80% { transform: translateY(-5px) rotate(-2deg); }
       }
+      @keyframes apPeek {
+        0%, 100% { transform: translateX(0) translateY(0) rotate(-1deg); }
+        50% { transform: translateX(-8px) translateY(-5px) rotate(1deg); }
+      }
       @media (max-width: 720px) {
         #auditpilot-floating-assistant .ap-bubble { width: 238px; }
         #auditpilot-floating-assistant .ap-character-wrap { width: 78px; height: 104px; }
@@ -577,7 +574,6 @@ def render_assistant_widget() -> None:
     <div class="ap-character-wrap" title="드래그해서 위치 이동">
       <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
-    <button class="ap-restore" type="button"><span class="ap-restore-dot"></span>삼일이</button>
   `;
   doc.body.appendChild(node);
 
@@ -598,7 +594,6 @@ def render_assistant_widget() -> None:
   let offsetY = 0;
   const dragHandle = node.querySelector(".ap-character-wrap");
   const closeButton = node.querySelector(".ap-close");
-  const restoreButton = node.querySelector(".ap-restore");
   const chatLog = node.querySelector(".ap-chat-log");
   const chatForm = node.querySelector(".ap-chat-form");
   const chatInput = node.querySelector(".ap-chat-input");
@@ -674,12 +669,12 @@ def render_assistant_widget() -> None:
     parentWindow.localStorage.setItem("auditpilotAssistantHidden", "1");
   });
 
-  restoreButton.addEventListener("click", function () {
-    node.classList.remove("ap-hidden");
-    parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
-  });
-
   dragHandle.addEventListener("pointerdown", function (event) {
+    if (node.classList.contains("ap-hidden")) {
+      node.classList.remove("ap-hidden");
+      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
+      return;
+    }
     dragging = true;
     node.classList.add("ap-dragging");
     const rect = node.getBoundingClientRect();

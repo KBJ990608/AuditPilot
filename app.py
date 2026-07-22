@@ -351,27 +351,12 @@ def render_assistant_widget() -> None:
       #auditpilot-floating-assistant.ap-dragging .ap-character-wrap { cursor: grabbing; }
       #auditpilot-floating-assistant.ap-hidden {
         gap: 0;
-        right: -58px !important;
-        bottom: 18px !important;
-        left: auto !important;
-        top: auto !important;
       }
       #auditpilot-floating-assistant.ap-hidden .ap-bubble {
         display: none;
       }
       #auditpilot-floating-assistant.ap-hidden .ap-character-wrap {
-        display: flex;
-        width: 86px;
-        height: 118px;
         cursor: pointer;
-      }
-      #auditpilot-floating-assistant.ap-hidden .ap-character-wrap::after {
-        opacity: .16;
-      }
-      #auditpilot-floating-assistant.ap-hidden img {
-        width: 82px;
-        height: 112px;
-        animation: apPeek 2.6s ease-in-out infinite;
       }
       #auditpilot-floating-assistant .ap-character-wrap {
         position: relative;
@@ -550,10 +535,6 @@ def render_assistant_widget() -> None:
         25% { transform: translateY(-7px) rotate(-4deg); }
         55% { transform: translateY(-7px) rotate(4deg); }
         80% { transform: translateY(-5px) rotate(-2deg); }
-      }
-      @keyframes apPeek {
-        0%, 100% { transform: translateX(0) translateY(0) rotate(-1deg); }
-        50% { transform: translateX(-8px) translateY(-5px) rotate(1deg); }
       }
       @media (max-width: 720px) {
         #auditpilot-floating-assistant .ap-bubble { width: 238px; }

@@ -587,6 +587,9 @@ def render_assistant_widget() -> None:
   let dragging = false;
   let offsetX = 0;
   let offsetY = 0;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let wasHiddenOnPointerDown = false;
   const dragHandle = node.querySelector(".ap-character-wrap");
   const closeButton = node.querySelector(".ap-close");
   const chatLog = node.querySelector(".ap-chat-log");
@@ -665,12 +668,10 @@ def render_assistant_widget() -> None:
   });
 
   dragHandle.addEventListener("pointerdown", function (event) {
-    if (node.classList.contains("ap-hidden")) {
-      node.classList.remove("ap-hidden");
-      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
-      return;
-    }
     dragging = true;
+    wasHiddenOnPointerDown = node.classList.contains("ap-hidden");
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
     node.classList.add("ap-dragging");
     const rect = node.getBoundingClientRect();
     offsetX = event.clientX - rect.left;
@@ -683,10 +684,16 @@ def render_assistant_widget() -> None:
     place(event.clientX, event.clientY);
   });
 
-  parentWindow.addEventListener("pointerup", function () {
+  parentWindow.addEventListener("pointerup", function (event) {
     if (!dragging) return;
+    const moved = Math.abs(event.clientX - dragStartX) + Math.abs(event.clientY - dragStartY);
     dragging = false;
     node.classList.remove("ap-dragging");
+    if (wasHiddenOnPointerDown && moved < 6) {
+      node.classList.remove("ap-hidden");
+      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
+    }
+    wasHiddenOnPointerDown = false;
     const rect = node.getBoundingClientRect();
     parentWindow.localStorage.setItem(
       "auditpilotAssistantPositionV2",

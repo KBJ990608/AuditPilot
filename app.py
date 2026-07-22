@@ -380,7 +380,7 @@ def render_assistant_widget() -> None:
         bottom: 54px;
         z-index: 2;
         width: max-content;
-        max-width: 140px;
+        max-width: 180px;
         padding: 6px 9px;
         border: 1px solid #fee2e2;
         border-radius: 999px;
@@ -602,7 +602,7 @@ def render_assistant_widget() -> None:
       </form>
     </div>
     <div class="ap-character-wrap" title="드래그해서 위치 이동">
-      <span class="ap-reopen-hint">클릭하면 채팅 열림</span>
+      <span class="ap-reopen-hint">클릭하면 채팅이 다시 열려요</span>
       <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
     </div>
   `;

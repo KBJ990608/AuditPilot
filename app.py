@@ -32,13 +32,39 @@ st.markdown("""
 [data-testid="stMetricValue"] {font-size: 1.55rem}
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
-.bot-strip {display:flex; align-items:center; gap:1rem; margin:.8rem 0 1.25rem; padding:.9rem 1rem; border:1px solid #e5e7eb; border-radius:.6rem; background:#fff}
-.bot-strip img {width:86px; height:104px; object-fit:contain}
-.bot-name {font-weight:700; color:#111827; margin-bottom:.15rem}
+.bot-strip {display:flex; align-items:center; gap:1.1rem; margin:.8rem 0 1.25rem; padding:.9rem 1rem; border:1px solid #e5e7eb; border-radius:.6rem; background:#fff; overflow:hidden}
+.bot-avatar {position:relative; flex:0 0 auto; width:96px; height:112px; display:flex; align-items:center; justify-content:center}
+.bot-avatar::after {content:""; position:absolute; left:20px; right:20px; bottom:2px; height:10px; border-radius:999px; background:rgba(17,24,39,.12); filter:blur(4px); animation:botShadow 3s ease-in-out infinite}
+.bot-avatar img {position:relative; z-index:1; width:86px; height:104px; object-fit:contain; animation:botFloat 3s ease-in-out infinite; transform-origin:50% 90%}
+.bot-strip:hover .bot-avatar img {animation:botWave .75s ease-in-out 1, botFloat 3s ease-in-out infinite .75s}
+.bot-message {position:relative; max-width:760px; padding:.72rem .9rem; border:1px solid #e5e7eb; border-radius:.75rem; background:#f9fafb}
+.bot-message::before {content:""; position:absolute; left:-8px; top:34px; width:14px; height:14px; background:#f9fafb; border-left:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; transform:rotate(45deg)}
+.bot-name {display:flex; align-items:center; gap:.42rem; font-weight:700; color:#111827; margin-bottom:.18rem}
+.bot-dot {width:.48rem; height:.48rem; border-radius:50%; background:#ff4b4b; box-shadow:0 0 0 rgba(255,75,75,.34); animation:botPulse 1.8s ease-in-out infinite}
 .bot-copy {color:#6b7280; margin:0; line-height:1.55}
+@keyframes botFloat {
+    0%, 100% {transform:translateY(0) rotate(-1deg)}
+    50% {transform:translateY(-8px) rotate(1deg)}
+}
+@keyframes botShadow {
+    0%, 100% {transform:scaleX(.9); opacity:.55}
+    50% {transform:scaleX(1.08); opacity:.28}
+}
+@keyframes botPulse {
+    0%, 100% {box-shadow:0 0 0 0 rgba(255,75,75,.28)}
+    50% {box-shadow:0 0 0 7px rgba(255,75,75,0)}
+}
+@keyframes botWave {
+    0%, 100% {transform:translateY(-4px) rotate(0)}
+    25% {transform:translateY(-7px) rotate(-4deg)}
+    55% {transform:translateY(-7px) rotate(4deg)}
+    80% {transform:translateY(-5px) rotate(-2deg)}
+}
 @media (max-width: 640px) {
     .bot-strip {align-items:flex-start}
-    .bot-strip img {width:70px; height:88px}
+    .bot-avatar {width:78px; height:96px}
+    .bot-avatar img {width:70px; height:88px}
+    .bot-message::before {top:30px}
 }
 </style>""", unsafe_allow_html=True)
 
@@ -208,9 +234,11 @@ st.title("AuditPilot")
 st.caption("감사자료 수집부터 클렌징, 분석, 테스트, 문서화까지 반복 업무를 줄이고 감사인 판단에 집중하도록 돕는 Assistant")
 st.markdown(f"""
 <div class="bot-strip">
-    <img src="data:image/png;base64,{BOT_IMAGE}" alt="AuditPilot AI assistant">
-    <div>
-        <div class="bot-name">AuditPilot AI Assistant</div>
+    <div class="bot-avatar">
+        <img src="data:image/png;base64,{BOT_IMAGE}" alt="AuditPilot AI assistant">
+    </div>
+    <div class="bot-message">
+        <div class="bot-name"><span class="bot-dot"></span>AuditPilot AI Assistant</div>
         <p class="bot-copy">자료 정리, 후보 산출, 질의·조서 초안 작성을 돕습니다. 위험평가와 최종 판단은 감사인이 남깁니다.</p>
     </div>
 </div>

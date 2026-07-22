@@ -1,9 +1,7 @@
 import base64
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
-import threading
 
 import pandas as pd
 import streamlit as st
@@ -211,7 +209,6 @@ JUDGMENT_BOUNDARIES = [
     "승인 게이트를 통과하기 전에는 질의 문안과 조서 결론이 외부 발송 또는 확정되지 않습니다.",
 ]
 
-ASSISTANT_PORT = int(app_setting("AUDITPILOT_ASSISTANT_PORT", "8765"))
 ASSISTANT_SYSTEM_PROMPT = """당신은 AuditPilot 앱의 챗봇 '삼일이'입니다.
 사용자의 감사 업무 질문에 한국어로 짧고 실무적으로 답합니다.
 주요 범위는 PBC 요청, 자료 클렌징, 표준 스키마 매핑, 분석적검토, 테스트 설계, 조서 초안, 감사인 판단입니다.
@@ -238,64 +235,39 @@ def assistant_reply(question: str) -> dict:
     return {"answer": response.content, "provider": response.provider, "model": response.model}
 
 
-def ensure_assistant_server() -> None:
-    if st.session_state.get("assistant_server_started"):
-        return
-
-    class AssistantHandler(BaseHTTPRequestHandler):
-        def _send_json(self, status: int, payload: dict) -> None:
-            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
-            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-        def do_OPTIONS(self) -> None:
-            self._send_json(200, {"ok": True})
-
-        def do_POST(self) -> None:
-            if self.path != "/assistant":
-                self._send_json(404, {"answer": "지원하지 않는 경로입니다."})
-                return
-            try:
-                length = int(self.headers.get("Content-Length", "0"))
-                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
-                question = str(payload.get("question", "")).strip()
-                if not question:
-                    self._send_json(400, {"answer": "질문을 입력해 주세요."})
-                    return
-                self._send_json(200, assistant_reply(question))
-            except Exception as exc:
-                detail = ""
-                response = getattr(exc, "response", None)
-                if response is not None:
-                    try:
-                        error = response.json().get("error", {})
-                        detail = error.get("message", "") or error.get("code", "")
-                    except Exception:
-                        detail = ""
-                if "quota" in detail.lower() or "billing" in detail.lower():
-                    detail = "현재 API 사용량 한도 또는 결제 설정 때문에 응답을 받을 수 없습니다."
-                self._send_json(200, {
-                    "answer": f"AI 연결은 됐지만 응답을 받지 못했습니다. {detail or 'API 키, 사용량 한도, 결제 상태를 확인해 주세요.'}",
-                    "provider": "error",
-                })
-
-        def log_message(self, format: str, *args) -> None:
-            return
-
+def safe_assistant_reply(question: str) -> dict:
     try:
-        server = ThreadingHTTPServer(("127.0.0.1", ASSISTANT_PORT), AssistantHandler)
-    except OSError:
-        st.session_state.assistant_server_started = True
-        return
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    st.session_state.assistant_server_started = True
+        return assistant_reply(question)
+    except Exception as exc:
+        detail = ""
+        response = getattr(exc, "response", None)
+        if response is not None:
+            try:
+                error = response.json().get("error", {})
+                detail = error.get("message", "") or error.get("code", "")
+            except Exception:
+                detail = ""
+        if "quota" in detail.lower() or "billing" in detail.lower():
+            detail = "현재 API 사용량 한도 또는 결제 설정 때문에 응답을 받을 수 없습니다."
+        return {
+            "answer": f"AI 연결은 됐지만 응답을 받지 못했습니다. {detail or 'API 키, 사용량 한도, 결제 상태를 확인해 주세요.'}",
+            "provider": "error",
+        }
+
+
+def assistant_result_from_query() -> dict:
+    question = str(st.query_params.get("assistant_question", "")).strip()
+    nonce = str(st.query_params.get("assistant_nonce", "")).strip()
+    if not question:
+        return {"question": "", "answer": "", "nonce": ""}
+    if st.session_state.get("assistant_last_nonce") != nonce:
+        st.session_state.assistant_last_nonce = nonce
+        st.session_state.assistant_last_result = safe_assistant_reply(question)
+    result = st.session_state.get("assistant_last_result", {})
+    return {"question": question, "answer": str(result.get("answer", "")), "nonce": nonce}
+
+
+ASSISTANT_QUERY_RESULT = assistant_result_from_query()
 
 
 def load_bundle(bundle: SampleBundle) -> None:
@@ -326,11 +298,16 @@ def uploaded_bundle(files) -> SampleBundle:
 
 
 def render_assistant_widget() -> None:
-    ensure_assistant_server()
+    server_question = json.dumps(ASSISTANT_QUERY_RESULT["question"], ensure_ascii=False)
+    server_answer = json.dumps(ASSISTANT_QUERY_RESULT["answer"], ensure_ascii=False)
+    server_nonce = json.dumps(ASSISTANT_QUERY_RESULT["nonce"], ensure_ascii=False)
     html = """
 <script>
 (function () {
   const botImage = "__BOT_IMAGE__";
+  const serverQuestion = __SERVER_QUESTION__;
+  const serverAnswer = __SERVER_ANSWER__;
+  const serverNonce = __SERVER_NONCE__;
   let doc;
   try {
     doc = window.parent.document;
@@ -699,14 +676,11 @@ def render_assistant_widget() -> None:
     });
   }
 
-  async function askAssistant(text) {
-    const response = await fetch("http://127.0.0.1:__ASSISTANT_PORT__/assistant", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({question: text})
-    });
-    const payload = await response.json();
-    return payload.answer || "답변을 가져오지 못했습니다.";
+  function requestAssistant(text) {
+    const url = new URL(parentWindow.location.href);
+    url.searchParams.set("assistant_question", text);
+    url.searchParams.set("assistant_nonce", Date.now().toString());
+    parentWindow.location.href = url.toString();
   }
 
   function compactAnswer(text) {
@@ -719,22 +693,25 @@ def render_assistant_widget() -> None:
     appendMessage("user", text);
     chatInput.value = "";
     chatInput.disabled = true;
-    const pending = appendMessage("bot", "생각 중입니다...");
-    try {
-      const answer = compactAnswer(await askAssistant(text));
-      updateChatWithoutMovingCharacter(function () {
-        pending.textContent = answer;
-        chatLog.scrollTop = chatLog.scrollHeight;
-      });
-    } catch (error) {
-      updateChatWithoutMovingCharacter(function () {
-        pending.textContent = "AI 서버에 연결하지 못했습니다. 앱을 새로고침하거나 OPENAI_API_KEY 설정을 확인해 주세요.";
-        chatLog.scrollTop = chatLog.scrollHeight;
-      });
-    } finally {
-      chatInput.disabled = false;
-      chatInput.focus();
+    appendMessage("bot", "답변을 준비하고 있어요...");
+    requestAssistant(text);
+  }
+
+  if (serverQuestion && serverAnswer) {
+    updateChatWithoutMovingCharacter(function () {
+      chatLog.innerHTML = "";
+      const userMessage = doc.createElement("div");
+      userMessage.className = "ap-msg user";
+      userMessage.textContent = serverQuestion;
+      chatLog.appendChild(userMessage);
+      const botMessage = doc.createElement("div");
+      botMessage.className = "ap-msg bot";
+      botMessage.textContent = compactAnswer(serverAnswer);
+      chatLog.appendChild(botMessage);
       chatLog.scrollTop = chatLog.scrollHeight;
+    });
+    if (serverNonce) {
+      parentWindow.history.replaceState(null, "", parentWindow.location.pathname + parentWindow.location.hash);
     }
   }
 
@@ -779,7 +756,11 @@ def render_assistant_widget() -> None:
 </script>
 """
     components.html(
-        html.replace("__BOT_IMAGE__", BOT_IMAGE).replace("__ASSISTANT_PORT__", str(ASSISTANT_PORT)),
+        html
+        .replace("__BOT_IMAGE__", BOT_IMAGE)
+        .replace("__SERVER_QUESTION__", server_question)
+        .replace("__SERVER_ANSWER__", server_answer)
+        .replace("__SERVER_NONCE__", server_nonce),
         height=0,
     )
 

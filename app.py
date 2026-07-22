@@ -616,6 +616,32 @@ def render_assistant_widget() -> None:
     node.style.bottom = "auto";
   }
 
+  function saveNodePosition() {
+    const rect = node.getBoundingClientRect();
+    parentWindow.localStorage.setItem(
+      "auditpilotAssistantPositionV2",
+      JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) })
+    );
+  }
+
+  function setBubbleHidden(hidden) {
+    const characterBefore = dragHandle.getBoundingClientRect();
+    if (hidden) {
+      node.classList.add("ap-hidden");
+      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "1");
+    } else {
+      node.classList.remove("ap-hidden");
+      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
+    }
+    const characterAfter = dragHandle.getBoundingClientRect();
+    const nodeAfter = node.getBoundingClientRect();
+    node.style.left = (nodeAfter.left + characterBefore.left - characterAfter.left) + "px";
+    node.style.top = (nodeAfter.top + characterBefore.top - characterAfter.top) + "px";
+    node.style.right = "auto";
+    node.style.bottom = "auto";
+    saveNodePosition();
+  }
+
   function appendMessage(role, text) {
     const message = doc.createElement("div");
     message.className = "ap-msg " + role;
@@ -663,8 +689,7 @@ def render_assistant_widget() -> None:
   });
 
   closeButton.addEventListener("click", function () {
-    node.classList.add("ap-hidden");
-    parentWindow.localStorage.setItem("auditpilotAssistantHidden", "1");
+    setBubbleHidden(true);
   });
 
   dragHandle.addEventListener("pointerdown", function (event) {
@@ -690,15 +715,10 @@ def render_assistant_widget() -> None:
     dragging = false;
     node.classList.remove("ap-dragging");
     if (wasHiddenOnPointerDown && moved < 6) {
-      node.classList.remove("ap-hidden");
-      parentWindow.localStorage.setItem("auditpilotAssistantHidden", "0");
+      setBubbleHidden(false);
     }
     wasHiddenOnPointerDown = false;
-    const rect = node.getBoundingClientRect();
-    parentWindow.localStorage.setItem(
-      "auditpilotAssistantPositionV2",
-      JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) })
-    );
+    saveNodePosition();
   });
 })();
 </script>

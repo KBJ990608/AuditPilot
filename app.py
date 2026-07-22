@@ -33,12 +33,12 @@ st.markdown("""
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
 .bot-strip {display:flex; align-items:center; gap:1rem; margin:.8rem 0 1.25rem; padding:.9rem 1rem; border:1px solid #e5e7eb; border-radius:.6rem; background:#fff}
-.bot-strip img {width:76px; height:76px; object-fit:cover; border-radius:50%; border:1px solid #e5e7eb}
+.bot-strip img {width:86px; height:104px; object-fit:contain}
 .bot-name {font-weight:700; color:#111827; margin-bottom:.15rem}
 .bot-copy {color:#6b7280; margin:0; line-height:1.55}
 @media (max-width: 640px) {
     .bot-strip {align-items:flex-start}
-    .bot-strip img {width:60px; height:60px}
+    .bot-strip img {width:70px; height:88px}
 }
 </style>""", unsafe_allow_html=True)
 

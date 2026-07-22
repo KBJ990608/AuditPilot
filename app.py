@@ -67,6 +67,7 @@ st.markdown("""
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
 .app-logo-row [data-testid="stImage"] {margin-top:.15rem}
+.app-logo-row [data-testid="stHeading"] h1 {font-size:2.85rem; line-height:1.05}
 </style>""", unsafe_allow_html=True)
 
 DEFAULTS = {
@@ -770,7 +771,7 @@ def render_assistant_widget() -> None:
 st.markdown('<div class="app-logo-row">', unsafe_allow_html=True)
 logo_col, title_col = st.columns([0.08, 0.92], vertical_alignment="center")
 with logo_col:
-    st.image(str(LOGO_PATH), width=82)
+    st.image(str(LOGO_PATH), width=104)
 with title_col:
     st.title("AuditPilot")
 st.markdown("</div>", unsafe_allow_html=True)

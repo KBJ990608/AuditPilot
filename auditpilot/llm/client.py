@@ -30,12 +30,16 @@ class FixtureClient:
 
 
 class OpenAICompatibleClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout: int = 20):
-        self.base_url, self.api_key, self.model, self.timeout = base_url.rstrip("/"), api_key, model, timeout
+    def __init__(self, base_url: str, api_key: str, model: str, timeout: int = 20, max_tokens: int = 220):
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.model = model
+        self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def generate(self, task_key: str, system: str, user: str) -> LLMResponse:
         response = requests.post(f"{self.base_url}/chat/completions", headers={"Authorization": f"Bearer {self.api_key}"},
-                                 json={"model": self.model, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "temperature": 0}, timeout=self.timeout)
+                                 json={"model": self.model, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "temperature": 0, "max_tokens": self.max_tokens}, timeout=self.timeout)
         response.raise_for_status()
         return LLMResponse(response.json()["choices"][0]["message"]["content"], "openai_compat", self.model)
 

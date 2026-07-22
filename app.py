@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from auditpilot.core.analytics import analyze, build_computed_values
 from auditpilot.core.export import export_markdown, export_xlsx
@@ -32,40 +33,6 @@ st.markdown("""
 [data-testid="stMetricValue"] {font-size: 1.55rem}
 .draft {border:1px solid #d97706; background:#fffbeb; padding:.7rem 1rem; border-radius:.5rem; color:#92400e}
 .cache {display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e0f2fe; color:#075985; font-size:.78rem}
-.bot-strip {display:flex; align-items:center; gap:1.1rem; margin:.8rem 0 1.25rem; padding:.9rem 1rem; border:1px solid #e5e7eb; border-radius:.6rem; background:#fff; overflow:hidden}
-.bot-avatar {position:relative; flex:0 0 auto; width:96px; height:112px; display:flex; align-items:center; justify-content:center}
-.bot-avatar::after {content:""; position:absolute; left:20px; right:20px; bottom:2px; height:10px; border-radius:999px; background:rgba(17,24,39,.12); filter:blur(4px); animation:botShadow 3s ease-in-out infinite}
-.bot-avatar img {position:relative; z-index:1; width:86px; height:104px; object-fit:contain; animation:botFloat 3s ease-in-out infinite; transform-origin:50% 90%}
-.bot-strip:hover .bot-avatar img {animation:botWave .75s ease-in-out 1, botFloat 3s ease-in-out infinite .75s}
-.bot-message {position:relative; max-width:760px; padding:.72rem .9rem; border:1px solid #e5e7eb; border-radius:.75rem; background:#f9fafb}
-.bot-message::before {content:""; position:absolute; left:-8px; top:34px; width:14px; height:14px; background:#f9fafb; border-left:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; transform:rotate(45deg)}
-.bot-name {display:flex; align-items:center; gap:.42rem; font-weight:700; color:#111827; margin-bottom:.18rem}
-.bot-dot {width:.48rem; height:.48rem; border-radius:50%; background:#ff4b4b; box-shadow:0 0 0 rgba(255,75,75,.34); animation:botPulse 1.8s ease-in-out infinite}
-.bot-copy {color:#6b7280; margin:0; line-height:1.55}
-@keyframes botFloat {
-    0%, 100% {transform:translateY(0) rotate(-1deg)}
-    50% {transform:translateY(-8px) rotate(1deg)}
-}
-@keyframes botShadow {
-    0%, 100% {transform:scaleX(.9); opacity:.55}
-    50% {transform:scaleX(1.08); opacity:.28}
-}
-@keyframes botPulse {
-    0%, 100% {box-shadow:0 0 0 0 rgba(255,75,75,.28)}
-    50% {box-shadow:0 0 0 7px rgba(255,75,75,0)}
-}
-@keyframes botWave {
-    0%, 100% {transform:translateY(-4px) rotate(0)}
-    25% {transform:translateY(-7px) rotate(-4deg)}
-    55% {transform:translateY(-7px) rotate(4deg)}
-    80% {transform:translateY(-5px) rotate(-2deg)}
-}
-@media (max-width: 640px) {
-    .bot-strip {align-items:flex-start}
-    .bot-avatar {width:78px; height:96px}
-    .bot-avatar img {width:70px; height:88px}
-    .bot-message::before {top:30px}
-}
 </style>""", unsafe_allow_html=True)
 
 DEFAULTS = {
@@ -230,19 +197,222 @@ def uploaded_bundle(files) -> SampleBundle:
     return SampleBundle(*(classified[kind] for kind in required))
 
 
+def render_assistant_widget() -> None:
+    html = """
+<script>
+(function () {
+  const botImage = "__BOT_IMAGE__";
+  let doc;
+  try {
+    doc = window.parent.document;
+  } catch (error) {
+    return;
+  }
+
+  const existing = doc.getElementById("auditpilot-floating-assistant");
+  if (existing) existing.remove();
+
+  if (!doc.getElementById("auditpilot-floating-assistant-style")) {
+    const style = doc.createElement("style");
+    style.id = "auditpilot-floating-assistant-style";
+    style.textContent = `
+      #auditpilot-floating-assistant {
+        position: fixed;
+        left: 24px;
+        bottom: 24px;
+        z-index: 2147483000;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        user-select: none;
+        touch-action: none;
+        cursor: grab;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #auditpilot-floating-assistant.ap-dragging { cursor: grabbing; }
+      #auditpilot-floating-assistant .ap-character-wrap {
+        position: relative;
+        width: 96px;
+        height: 132px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      #auditpilot-floating-assistant .ap-character-wrap::after {
+        content: "";
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 3px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(17, 24, 39, .18);
+        filter: blur(5px);
+        animation: apBotShadow 3s ease-in-out infinite;
+      }
+      #auditpilot-floating-assistant img {
+        position: relative;
+        z-index: 1;
+        width: 92px;
+        height: 126px;
+        object-fit: contain;
+        animation: apBotFloat 3s ease-in-out infinite;
+        transform-origin: 50% 90%;
+        pointer-events: none;
+      }
+      #auditpilot-floating-assistant:hover img {
+        animation: apBotWave .75s ease-in-out 1, apBotFloat 3s ease-in-out infinite .75s;
+      }
+      #auditpilot-floating-assistant .ap-bubble {
+        position: relative;
+        max-width: 260px;
+        margin-bottom: 22px;
+        padding: 10px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .96);
+        color: #374151;
+        box-shadow: 0 12px 28px rgba(17, 24, 39, .12);
+        backdrop-filter: blur(8px);
+      }
+      #auditpilot-floating-assistant .ap-bubble::before {
+        content: "";
+        position: absolute;
+        left: -7px;
+        bottom: 24px;
+        width: 12px;
+        height: 12px;
+        border-left: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        background: rgba(255, 255, 255, .96);
+        transform: rotate(45deg);
+      }
+      #auditpilot-floating-assistant .ap-name {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 3px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #111827;
+      }
+      #auditpilot-floating-assistant .ap-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #ff4b4b;
+        animation: apBotPulse 1.8s ease-in-out infinite;
+      }
+      #auditpilot-floating-assistant .ap-copy {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #6b7280;
+      }
+      @keyframes apBotFloat {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-8px) rotate(1deg); }
+      }
+      @keyframes apBotShadow {
+        0%, 100% { transform: scaleX(.88); opacity: .55; }
+        50% { transform: scaleX(1.08); opacity: .28; }
+      }
+      @keyframes apBotPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, .32); }
+        50% { box-shadow: 0 0 0 7px rgba(255, 75, 75, 0); }
+      }
+      @keyframes apBotWave {
+        0%, 100% { transform: translateY(-4px) rotate(0); }
+        25% { transform: translateY(-7px) rotate(-4deg); }
+        55% { transform: translateY(-7px) rotate(4deg); }
+        80% { transform: translateY(-5px) rotate(-2deg); }
+      }
+      @media (max-width: 720px) {
+        #auditpilot-floating-assistant .ap-bubble { display: none; }
+        #auditpilot-floating-assistant .ap-character-wrap { width: 78px; height: 104px; }
+        #auditpilot-floating-assistant img { width: 72px; height: 98px; }
+      }
+    `;
+    doc.head.appendChild(style);
+  }
+
+  const node = doc.createElement("div");
+  node.id = "auditpilot-floating-assistant";
+  node.setAttribute("aria-label", "AuditPilot AI assistant. Drag to move.");
+  node.innerHTML = `
+    <div class="ap-character-wrap">
+      <img src="data:image/png;base64,${botImage}" alt="AuditPilot AI assistant">
+    </div>
+    <div class="ap-bubble">
+      <div class="ap-name"><span class="ap-dot"></span>AuditPilot</div>
+      <p class="ap-copy">자료 정리와 조서 초안을 도와드릴게요. 판단은 감사인이 합니다.</p>
+    </div>
+  `;
+  doc.body.appendChild(node);
+
+  const parentWindow = window.parent;
+  const saved = parentWindow.localStorage.getItem("auditpilotAssistantPosition");
+  if (saved) {
+    try {
+      const position = JSON.parse(saved);
+      node.style.left = position.x + "px";
+      node.style.top = position.y + "px";
+      node.style.bottom = "auto";
+    } catch (error) {}
+  }
+
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function place(clientX, clientY) {
+    const rect = node.getBoundingClientRect();
+    const maxX = parentWindow.innerWidth - rect.width - 8;
+    const maxY = parentWindow.innerHeight - rect.height - 8;
+    const x = clamp(clientX - offsetX, 8, Math.max(8, maxX));
+    const y = clamp(clientY - offsetY, 8, Math.max(8, maxY));
+    node.style.left = x + "px";
+    node.style.top = y + "px";
+    node.style.bottom = "auto";
+  }
+
+  node.addEventListener("pointerdown", function (event) {
+    dragging = true;
+    node.classList.add("ap-dragging");
+    const rect = node.getBoundingClientRect();
+    offsetX = event.clientX - rect.left;
+    offsetY = event.clientY - rect.top;
+    node.setPointerCapture(event.pointerId);
+  });
+
+  parentWindow.addEventListener("pointermove", function (event) {
+    if (!dragging) return;
+    place(event.clientX, event.clientY);
+  });
+
+  parentWindow.addEventListener("pointerup", function () {
+    if (!dragging) return;
+    dragging = false;
+    node.classList.remove("ap-dragging");
+    const rect = node.getBoundingClientRect();
+    parentWindow.localStorage.setItem(
+      "auditpilotAssistantPosition",
+      JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) })
+    );
+  });
+})();
+</script>
+"""
+    components.html(html.replace("__BOT_IMAGE__", BOT_IMAGE), height=0)
+
+
 st.title("AuditPilot")
 st.caption("감사자료 수집부터 클렌징, 분석, 테스트, 문서화까지 반복 업무를 줄이고 감사인 판단에 집중하도록 돕는 Assistant")
-st.markdown(f"""
-<div class="bot-strip">
-    <div class="bot-avatar">
-        <img src="data:image/png;base64,{BOT_IMAGE}" alt="AuditPilot AI assistant">
-    </div>
-    <div class="bot-message">
-        <div class="bot-name"><span class="bot-dot"></span>AuditPilot AI Assistant</div>
-        <p class="bot-copy">자료 정리, 후보 산출, 질의·조서 초안 작성을 돕습니다. 위험평가와 최종 판단은 감사인이 남깁니다.</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+render_assistant_widget()
 materiality = 50_000_000
 
 tab_bottleneck, tab_pbc, tab_upload, tab_validate, tab_analytics, tab_workpaper = st.tabs([

@@ -75,20 +75,20 @@ AuditPilot은 감사 수행 흐름을 6개 단계로 나누어 지원합니다.
 - 감사조서 초안 생성
 - 문서 내 수치 검증
 - xlsx, Markdown export
-- 플로팅 무료 챗봇 `삼일이`
-- API 키 없이 동작하는 즉시 응답형 데모 질의응답
+- 플로팅 OpenAI 챗봇 `삼일이`
+- 서버 측 OpenAI Responses API 기반 질의응답
 - 감사인 승인 게이트 기반 human-in-the-loop 흐름
 
 ## Samili Chatbot
 
-앱 우측 하단에는 무료 즉시 응답 챗봇 `삼일이`가 있습니다.
+앱 우측 하단에는 OpenAI API 기반 챗봇 `삼일이`가 있습니다.
 
-- 마우스로 위치를 자유롭게 옮길 수 있습니다.
-- `X`를 누르면 말풍선만 닫히고 캐릭터는 남아 있습니다.
-- 캐릭터를 다시 클릭하면 채팅창이 열립니다.
+- 우측 하단의 `삼일이 AI` 버튼으로 채팅창을 열 수 있습니다.
+- 질문과 최근 답변은 현재 Streamlit 세션에만 유지됩니다.
 - PBC, 클렌징, 분석적검토, 테스트 설계, 조서 초안, 감사인 판단 지점에 대해 질문할 수 있습니다.
 
-데모 사이트의 챗봇은 별도 API 키 없이 브라우저에서 즉시 답변하도록 구성되어 있습니다. 포트폴리오 데모에서 속도를 우선하기 위한 방식이며, 감사 결론을 대신 내리지 않고 앱 사용 흐름과 확인 지점을 안내합니다.
+API 키는 브라우저에 전달되지 않고 Streamlit 서버에서만 읽습니다. 삼일이는 감사
+결론을 대신 내리지 않고 앱 사용 흐름과 확인 절차를 안내합니다.
 
 ## Human Judgment
 
@@ -131,9 +131,19 @@ http://localhost:8501
 Repository: KBJ990608/AuditPilot
 Branch: main
 Main file path: app.py
+Python version: 3.11
 ```
 
-현재 데모 챗봇은 API 키 없이 동작하므로 Streamlit Cloud Secrets 설정이 필요하지 않습니다.
+Streamlit Community Cloud의 **Advanced settings → Secrets**에 다음 값을 등록해야
+삼일이가 작동합니다.
+
+```toml
+OPENAI_API_KEY = "실제 OpenAI API 키"
+```
+
+Cloud는 저장소 루트의 `requirements.txt`를 자동으로 설치합니다. 이 프로젝트는
+OpenAI HTTP API를 `requests`로 호출하고 `.env`를 단일 자체 로더로 읽으므로
+`openai` 및 `python-dotenv` 패키지는 필요하지 않습니다.
 
 ## Tech Stack
 
@@ -141,6 +151,7 @@ Main file path: app.py
 - Streamlit
 - pandas
 - openpyxl
+- requests
 - pytest
 
 ## Tests
@@ -155,9 +166,9 @@ Main file path: app.py
 
 - 샘플 데이터는 기능 검증용 가상 데이터입니다.
 - 앱은 확인 필요 후보를 제시할 뿐 왜곡표시 여부나 감사의견을 판단하지 않습니다.
-- 데모 챗봇은 빠른 안내를 위한 규칙 기반 응답이며, 범용 AI처럼 모든 질문에 자유롭게 답하는 구조는 아닙니다.
+- 삼일이의 응답 품질과 속도는 OpenAI API 및 네트워크 상태에 영향을 받습니다.
 - 실제 업무 적용 시 회사별 계정 구조, 중요성, 산업 특성, 내부 정책에 맞춘 검증 룰 보강이 필요합니다.
-# OpenAI API 키 설정
+## OpenAI API 키 설정
 
 실제 API 키는 저장소에 커밋하지 않습니다. AuditPilot은 아래 순서로
 `OPENAI_API_KEY`를 불러옵니다.

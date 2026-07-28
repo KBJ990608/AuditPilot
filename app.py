@@ -14,7 +14,7 @@ from auditpilot.core.reviewer import review_numbers
 from auditpilot.core.validate import build_validation_report
 from auditpilot.core.workpaper import build_workpaper, render_workpaper_markdown
 from auditpilot.data.make_sample import SampleBundle, build_sample_bundle
-from auditpilot.assistant_server import ask_openai
+from auditpilot.assistant_server import OpenAIAPIError, ask_openai
 from auditpilot.settings import MissingOpenAIAPIKeyError
 from auditpilot.llm.client import FixtureClient
 from auditpilot.state import can_approve_query, can_approve_workpaper, can_validate, invalidate_downstream
@@ -758,10 +758,11 @@ def render_assistant_widget() -> None:
                     "OpenAI API 키가 설정되지 않았습니다. 환경변수, Streamlit Secrets "
                     "또는 로컬 .env에 OPENAI_API_KEY를 설정해주세요."
                 )
+            except OpenAIAPIError as exc:
+                answer = exc.user_message
             except Exception:
                 answer = (
-                    "OpenAI API 연결에 실패했습니다. 키, 결제 상태와 네트워크를 "
-                    "확인한 뒤 다시 시도해주세요."
+                    "삼일이 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
                 )
             history.append({"role": "assistant", "content": answer})
             st.rerun()

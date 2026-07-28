@@ -10,7 +10,20 @@ class BrokenClient:
 
 def test_fixture_client_and_fallback(tmp_path):
     fixture = tmp_path / "responses.json"
-    fixture.write_text(json.dumps({"hello": {"provider": "fixture", "model": "cached", "cached": True, "content": "안녕하세요"}}, ensure_ascii=False))
+    fixture.write_text(
+        json.dumps(
+            {
+                "hello": {
+                    "provider": "fixture",
+                    "model": "cached",
+                    "cached": True,
+                    "content": "안녕하세요",
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     client = FixtureClient(fixture)
     assert client.generate("hello", "", "").content == "안녕하세요"
     response = safe_generate(BrokenClient(), client, "hello", "", "")

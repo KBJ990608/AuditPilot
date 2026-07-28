@@ -3,6 +3,9 @@
 __pycache__/
 *.pyc
 .env
+.env.local
+.streamlit/secrets.toml
+secrets.toml
 internal/
 .claude/
 .DS_Store

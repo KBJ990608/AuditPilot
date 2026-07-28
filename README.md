@@ -157,3 +157,25 @@ Main file path: app.py
 - 앱은 확인 필요 후보를 제시할 뿐 왜곡표시 여부나 감사의견을 판단하지 않습니다.
 - 데모 챗봇은 빠른 안내를 위한 규칙 기반 응답이며, 범용 AI처럼 모든 질문에 자유롭게 답하는 구조는 아닙니다.
 - 실제 업무 적용 시 회사별 계정 구조, 중요성, 산업 특성, 내부 정책에 맞춘 검증 룰 보강이 필요합니다.
+# OpenAI API 키 설정
+
+실제 API 키는 저장소에 커밋하지 않습니다. AuditPilot은 아래 순서로
+`OPENAI_API_KEY`를 불러옵니다.
+
+1. 운영체제 환경변수 `OPENAI_API_KEY`
+2. Streamlit Secrets의 `OPENAI_API_KEY`
+3. 프로젝트 루트의 로컬 `.env`
+
+로컬에서는 운영체제 환경변수를 한 번 등록하면 이후 실행할 때 자동으로
+사용합니다. `.env`를 사용할 경우 `.env.example`을 `.env`로 복사한 뒤 실제
+값을 입력하세요. `.env`는 Git에서 제외됩니다.
+
+Streamlit Community Cloud에서는 앱 설정의 **Secrets**에 다음 값을 등록합니다.
+
+```toml
+OPENAI_API_KEY = "your_openai_api_key_here"
+```
+
+실제 키를 `.streamlit/secrets.toml`, 소스코드, GitHub Actions 로그 또는
+커밋 메시지에 넣지 마세요. 저장소의 `.streamlit/secrets.toml.example`은
+키 이름만 보여주는 안전한 예시입니다.

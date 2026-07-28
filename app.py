@@ -14,6 +14,8 @@ from auditpilot.core.reviewer import review_numbers
 from auditpilot.core.validate import build_validation_report
 from auditpilot.core.workpaper import build_workpaper, render_workpaper_markdown
 from auditpilot.data.make_sample import SampleBundle, build_sample_bundle
+from auditpilot.assistant_server import ask_openai
+from auditpilot.settings import MissingOpenAIAPIKeyError
 from auditpilot.llm.client import FixtureClient
 from auditpilot.state import can_approve_query, can_approve_workpaper, can_validate, invalidate_downstream
 
@@ -206,7 +208,7 @@ def uploaded_bundle(files) -> SampleBundle:
     return SampleBundle(*(classified[kind] for kind in required))
 
 
-def render_assistant_widget() -> None:
+def render_legacy_assistant_widget() -> None:
     html = """
 <script>
 (function () {
@@ -626,14 +628,27 @@ def render_assistant_widget() -> None:
     chatInput.value = "";
     chatInput.disabled = true;
     const pending = appendMessage("bot", "질문을 분석하고 있어요...");
-    parentWindow.setTimeout(function () {
+    try {
+      const response = await fetch(assistantEndpoint, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({question: text})
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "API 요청에 실패했습니다.");
       updateChatWithoutMovingCharacter(function () {
-        pending.textContent = compactAnswer(localAssistantAnswer(text));
+        pending.textContent = payload.answer;
         chatLog.scrollTop = chatLog.scrollHeight;
       });
+    } catch (error) {
+      updateChatWithoutMovingCharacter(function () {
+        pending.textContent = "OpenAI 연결에 실패해 데모 답변으로 안내할게요. " + compactAnswer(localAssistantAnswer(text));
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
+    } finally {
       chatInput.disabled = false;
       chatInput.focus();
-    }, 240);
+    }
   }
 
   chatForm.addEventListener("submit", async function (event) {
@@ -678,9 +693,78 @@ def render_assistant_widget() -> None:
 """
     components.html(
         html
-        .replace("__BOT_IMAGE__", BOT_IMAGE),
+        .replace("__BOT_IMAGE__", BOT_IMAGE)
+        .replace("__ASSISTANT_PORT__", "8766"),
         height=0,
     )
+
+
+def render_assistant_widget() -> None:
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stPopover"] {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 999999;
+        }
+        div[data-testid="stPopover"] > button {
+            border: 1px solid #fca5a5;
+            border-radius: 999px;
+            background: white;
+            color: #b91c1c;
+            box-shadow: 0 10px 28px rgba(17, 24, 39, .18);
+            font-weight: 800;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    history = st.session_state.setdefault(
+        "assistant_messages",
+        [
+            {
+                "role": "assistant",
+                "content": (
+                    "안녕하세요, 삼일이 AI입니다. PBC, 클렌징, 분석, 조서 등 "
+                    "감사업무에 관해 질문해주세요."
+                ),
+            }
+        ],
+    )
+
+    with st.popover("🤖 삼일이 AI"):
+        st.caption("OpenAI API 연결 · 감사인의 최종 판단을 대신하지 않습니다.")
+        for message in history[-8:]:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+
+        with st.form("assistant_question_form", clear_on_submit=True):
+            question = st.text_input(
+                "질문",
+                placeholder="삼일이에게 질문하기",
+                label_visibility="collapsed",
+            )
+            submitted = st.form_submit_button("보내기", use_container_width=True)
+
+        if submitted and question.strip():
+            history.append({"role": "user", "content": question.strip()})
+            try:
+                answer = ask_openai(question.strip())
+            except MissingOpenAIAPIKeyError:
+                answer = (
+                    "OpenAI API 키가 설정되지 않았습니다. 환경변수, Streamlit Secrets "
+                    "또는 로컬 .env에 OPENAI_API_KEY를 설정해주세요."
+                )
+            except Exception:
+                answer = (
+                    "OpenAI API 연결에 실패했습니다. 키, 결제 상태와 네트워크를 "
+                    "확인한 뒤 다시 시도해주세요."
+                )
+            history.append({"role": "assistant", "content": answer})
+            st.rerun()
 
 
 st.markdown(

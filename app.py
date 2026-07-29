@@ -41,6 +41,7 @@ st.markdown("""
 .app-logo-row {display:flex; align-items:center; gap:.35rem; margin:.15rem 0 .35rem}
 .app-logo-row img {width:126px; height:auto; display:block}
 .app-logo-row .app-title-text {margin:0 0 0 -1.45rem; color:#2f313d; font-size:2.85rem; font-weight:800; line-height:1; letter-spacing:0}
+.st-key-bottleneck_table [data-testid="stDataFrame"] button {display:none!important}
 @media (max-width: 720px) {
   .app-logo-row {gap:.25rem}
   .app-logo-row img {width:96px}
@@ -986,11 +987,8 @@ tab_bottleneck, tab_pbc, tab_upload, tab_validate, tab_analytics, tab_workpaper 
 with tab_bottleneck:
     st.subheader("감사업무 병목과 Digital 활용 지점")
     st.caption("반복 업무를 줄이는 목적은 감사인의 판단을 대체하는 것이 아니라, 판단에 도달하기 전의 자료 정리와 확인 비용을 줄이는 것입니다.")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("핵심 병목", "5개")
-    c2.metric("중심 단계", "Execution")
-    c3.metric("판단 게이트", "3단계")
-    st.dataframe(AUDIT_BOTTLENECKS, width="stretch", hide_index=True)
+    with st.container(key="bottleneck_table"):
+        st.dataframe(AUDIT_BOTTLENECKS, width="stretch", hide_index=True)
 
 with tab_pbc:
     st.subheader("목적이 보이는 자료 요청")
@@ -1005,8 +1003,6 @@ with tab_pbc:
     }])
     st.dataframe(pbc, width="stretch", hide_index=True)
     st.info(selected_pbc["message"])
-    st.caption("주요 감사 계정 템플릿 · 계정 선택에 따라 요청자료와 안내문이 함께 바뀝니다.")
-    st.caption("감사인이 요청 범위와 문안을 검토한 뒤 발송합니다. 자동 발송 기능은 없습니다.")
 
 with tab_upload:
     st.subheader("자료 업로드와 표준 스키마 매핑")
@@ -1018,7 +1014,12 @@ with tab_upload:
             load_bundle(build_sample_bundle())
             st.rerun()
     with right:
-        uploads = st.file_uploader("xlsx 4개 업로드", type=["xlsx"], accept_multiple_files=True)
+        uploads = st.file_uploader(
+            "감사자료 업로드",
+            type=["xlsx"],
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+        )
         if st.button("업로드 파일 처리", disabled=len(uploads) != 4, width="stretch"):
             try:
                 load_bundle(uploaded_bundle(uploads))
@@ -1098,8 +1099,8 @@ with tab_workpaper:
         width=760,
         hide_index=True,
         column_config={
-            "구분": st.column_config.TextColumn("구분", width="small"),
-            "원칙": st.column_config.TextColumn("원칙", width="large"),
+            "구분": st.column_config.TextColumn("구분", width=60),
+            "원칙": st.column_config.TextColumn("원칙", width=680),
         },
     )
     if st.session_state.analytics_result is None:

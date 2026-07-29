@@ -1,4 +1,5 @@
 import base64
+import html
 import json
 from pathlib import Path
 
@@ -700,28 +701,6 @@ def render_legacy_assistant_widget() -> None:
 
 
 def render_assistant_widget() -> None:
-    st.markdown(
-        """
-        <style>
-        div[data-testid="stPopover"] {
-            position: fixed;
-            right: 22px;
-            bottom: 22px;
-            z-index: 999999;
-        }
-        div[data-testid="stPopover"] > button {
-            border: 1px solid #fca5a5;
-            border-radius: 999px;
-            background: white;
-            color: #b91c1c;
-            box-shadow: 0 10px 28px rgba(17, 24, 39, .18);
-            font-weight: 800;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
     history = st.session_state.setdefault(
         "assistant_messages",
         [
@@ -734,20 +713,231 @@ def render_assistant_widget() -> None:
             }
         ],
     )
+    is_hidden = st.session_state.setdefault("assistant_hidden", False)
 
-    with st.popover("🤖 삼일이 AI"):
-        st.caption("OpenAI API 연결 · 감사인의 최종 판단을 대신하지 않습니다.")
-        for message in history[-8:]:
-            with st.chat_message(message["role"]):
-                st.write(message["content"])
+    st.markdown(
+        f"""
+        <style>
+        .st-key-samili_ai_panel {{
+            position: fixed !important;
+            right: 142px;
+            bottom: 24px;
+            z-index: 999999;
+            width: min(560px, calc(100vw - 190px));
+            max-height: min(650px, calc(100vh - 48px));
+            padding: 18px 24px 20px;
+            overflow: visible;
+            border: 1px solid #dfe3e8;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, .98);
+            box-shadow: 0 18px 55px rgba(17, 24, 39, .18);
+        }}
+        .st-key-samili_ai_panel [data-testid="stVerticalBlock"] {{
+            gap: .65rem;
+        }}
+        .samili-title {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 44px;
+            color: #111827;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -.03em;
+        }}
+        .samili-status {{
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #f25555;
+            box-shadow: 0 0 0 4px #fff;
+        }}
+        .samili-chat-log {{
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: 330px;
+            padding: 4px 1px 8px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }}
+        .samili-message {{
+            width: fit-content;
+            max-width: 84%;
+            padding: 14px 18px;
+            border-radius: 22px;
+            font-size: 18px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+        }}
+        .samili-message.bot {{
+            align-self: flex-start;
+            border-bottom-left-radius: 8px;
+            background: #f3f4f6;
+            color: #374151;
+        }}
+        .samili-message.user {{
+            align-self: flex-end;
+            border-bottom-right-radius: 8px;
+            background: #f25555;
+            color: white;
+        }}
+        .samili-character {{
+            position: absolute;
+            right: -132px;
+            bottom: -8px;
+            z-index: 2;
+            width: 132px;
+            height: 178px;
+            object-fit: contain;
+            filter: drop-shadow(0 12px 12px rgba(17, 24, 39, .20));
+            pointer-events: none;
+        }}
+        .st-key-samili_close button {{
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 25px;
+            box-shadow: none;
+        }}
+        .st-key-samili_close button:hover {{
+            border: 0;
+            background: #e5e7eb;
+            color: #111827;
+        }}
+        .st-key-samili_ai_panel [data-testid="stTextInput"] input {{
+            min-height: 58px;
+            border: 2px solid #d1d5db;
+            border-radius: 17px;
+            background: white;
+            font-size: 18px;
+        }}
+        .st-key-samili_ai_panel [data-testid="stFormSubmitButton"] button {{
+            min-height: 58px;
+            border: 0;
+            border-radius: 17px;
+            background: #f25555;
+            color: white;
+            font-size: 19px;
+            font-weight: 800;
+        }}
+        .st-key-samili_ai_launcher {{
+            position: fixed !important;
+            right: 22px;
+            bottom: 20px;
+            z-index: 999999;
+        }}
+        .st-key-samili_ai_launcher button {{
+            width: 112px;
+            height: 148px;
+            padding: 0 0 8px;
+            border: 0;
+            background: transparent
+                url("data:image/png;base64,{BOT_IMAGE}") center / contain no-repeat;
+            color: transparent;
+            box-shadow: none;
+        }}
+        .st-key-samili_ai_launcher button:hover {{
+            border: 0;
+            background-color: transparent;
+            color: transparent;
+        }}
+        @media (max-width: 720px) {{
+            .st-key-samili_ai_panel {{
+                right: 12px;
+                bottom: 116px;
+                width: calc(100vw - 24px);
+                max-height: calc(100vh - 140px);
+                padding: 14px 16px 16px;
+            }}
+            .samili-title {{ font-size: 20px; }}
+            .samili-chat-log {{ max-height: 265px; }}
+            .samili-message {{
+                max-width: 90%;
+                padding: 11px 14px;
+                font-size: 16px;
+            }}
+            .samili-character {{
+                right: 4px;
+                bottom: -104px;
+                width: 82px;
+                height: 108px;
+            }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if is_hidden:
+        with st.container(key="samili_ai_launcher"):
+            if st.button(
+                "삼일이 AI 열기",
+                key="samili_open",
+                help="삼일이 AI 열기",
+            ):
+                st.session_state.assistant_hidden = False
+                st.rerun()
+        return
+
+    message_html = "".join(
+        (
+            f'<div class="samili-message '
+            f'{"user" if message["role"] == "user" else "bot"}">'
+            f'{html.escape(str(message["content"]))}</div>'
+        )
+        for message in history[-8:]
+    )
+
+    with st.container(key="samili_ai_panel"):
+        title_col, close_col = st.columns([8, 1], vertical_alignment="center")
+        with title_col:
+            st.markdown(
+                """
+                <div class="samili-title">
+                    <span class="samili-status"></span>
+                    <span>삼일이 AI</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with close_col:
+            if st.button("×", key="samili_close", help="삼일이 숨기기"):
+                st.session_state.assistant_hidden = True
+                st.rerun()
+
+        st.markdown(
+            f'<div class="samili-chat-log">{message_html}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<img class="samili-character" '
+            f'src="data:image/png;base64,{BOT_IMAGE}" alt="삼일이 캐릭터">',
+            unsafe_allow_html=True,
+        )
 
         with st.form("assistant_question_form", clear_on_submit=True):
-            question = st.text_input(
-                "질문",
-                placeholder="삼일이에게 질문하기",
-                label_visibility="collapsed",
+            input_col, send_col = st.columns(
+                [4.2, 1],
+                vertical_alignment="bottom",
             )
-            submitted = st.form_submit_button("보내기", use_container_width=True)
+            with input_col:
+                question = st.text_input(
+                    "질문",
+                    placeholder="삼일이에게 질문하기",
+                    label_visibility="collapsed",
+                )
+            with send_col:
+                submitted = st.form_submit_button(
+                    "전송",
+                    use_container_width=True,
+                )
 
         if submitted and question.strip():
             history.append({"role": "user", "content": question.strip()})

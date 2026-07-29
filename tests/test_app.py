@@ -9,6 +9,23 @@ def test_app_renders_tabs_without_exception():
     assert any("app-logo-row" in item.value and "AuditPilot" in item.value for item in app.markdown)
 
 
+def test_samili_floating_panel_can_close_and_reopen():
+    app = AppTest.from_file("app.py", default_timeout=20).run()
+
+    assert any("samili-chat-log" in item.value for item in app.markdown)
+    assert any(item.label == "전송" for item in app.button)
+
+    close = next(item for item in app.button if item.label == "×")
+    app = close.click().run()
+    assert not app.exception
+    assert app.session_state["assistant_hidden"]
+
+    open_button = next(item for item in app.button if item.label == "삼일이 AI 열기")
+    app = open_button.click().run()
+    assert not app.exception
+    assert not app.session_state["assistant_hidden"]
+
+
 @pytest.mark.parametrize("rehearsal", range(5))
 def test_app_human_in_the_loop_full_flow(rehearsal):
     app = AppTest.from_file("app.py", default_timeout=20).run()

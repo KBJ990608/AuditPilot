@@ -210,10 +210,18 @@ def uploaded_bundle(files) -> SampleBundle:
 
 
 def render_legacy_assistant_widget() -> None:
+    history = st.session_state.get("assistant_messages", [])
+    messages_json = (
+        json.dumps(history[-8:], ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
     html = """
 <script>
 (function () {
   const botImage = "__BOT_IMAGE__";
+  const initialMessages = __CHAT_MESSAGES_JSON__;
   let doc;
   try {
     doc = window.parent.document;
@@ -487,9 +495,7 @@ def render_legacy_assistant_widget() -> None:
       <button class="ap-close" type="button" aria-label="삼일이 숨기기">×</button>
       <div class="ap-name"><span class="ap-dot"></span>삼일이 AI</div>
       <p class="ap-copy">안녕하세요 삼일이 AI 챗봇입니다! 무엇이든 물어보세요!</p>
-      <div class="ap-chat-log" aria-live="polite">
-        <div class="ap-msg bot">안녕하세요 삼일이 AI입니다! 질문을 감사업무 흐름에 맞춰 빠르게 안내할게요. 글이 가리면 저를 드래그해 옮길 수 있어요.</div>
-      </div>
+      <div class="ap-chat-log" aria-live="polite"></div>
       <form class="ap-chat-form">
         <input class="ap-chat-input" type="text" placeholder="삼일이에게 질문하기" autocomplete="off">
         <button class="ap-send" type="submit">전송</button>
@@ -516,6 +522,14 @@ def render_legacy_assistant_widget() -> None:
   const chatLog = node.querySelector(".ap-chat-log");
   const chatForm = node.querySelector(".ap-chat-form");
   const chatInput = node.querySelector(".ap-chat-input");
+
+  initialMessages.forEach(function (item) {
+    const message = doc.createElement("div");
+    message.className = "ap-msg " + (item.role === "user" ? "user" : "bot");
+    message.textContent = String(item.content || "");
+    chatLog.appendChild(message);
+  });
+  chatLog.scrollTop = chatLog.scrollHeight;
 
   if (parentWindow.localStorage.getItem("auditpilotAssistantHidden") === "1") {
     node.classList.add("ap-hidden");
@@ -582,74 +596,27 @@ def render_legacy_assistant_widget() -> None:
     });
   }
 
-  function localAssistantAnswer(text) {
-    const raw = text.trim();
-    const q = text.toLowerCase();
-    if (["ㅎㅇ", "하이", "안녕", "안녕하세요", "hi", "hello"].includes(q) || /^[ㅎㅋㅠㅜ]+$/.test(raw)) {
-      return "안녕하세요! 삼일이 AI입니다. PBC, 클렌징, 분석, 조서 중 궁금한 걸 물어보면 감사업무 흐름에 맞춰 안내할게요.";
-    }
-    if (/^[a-z]{1,3}$/i.test(raw)) {
-      return "영문으로 짧게 입력된 것 같아요. PBC, 클렌징, 분석, 조서처럼 궁금한 탭 이름을 한글로 물어보면 바로 안내할게요.";
-    }
-    if (q.includes("ai") || q.includes("gpt") || q.includes("api") || q.includes("연결") || q.includes("끊")) {
-      return "끊긴 게 아니에요. 지금 삼일이 AI는 데모 속도를 위해 무료 즉시 응답 방식으로 작동해요. PBC, 클렌징, 분석, 조서 질문은 바로 답할 수 있습니다.";
-    }
-    if (q.includes("사용") || q.includes("어떻게") || q.includes("방법") || q.includes("뭐하는")) {
-      return "③ 업로드·매핑에서 데모 샘플을 불러온 뒤 ④ 검증, ⑤ 분석, ⑥ 문서화 순서로 누르면 전체 흐름을 볼 수 있어요.";
-    }
-    if (q.includes("pbc") || q.includes("자료요청") || q.includes("요청")) {
-      return "PBC 탭에서 계정을 고르면 요청자료, 감사주장, 수행절차가 연결됩니다. 요청 목적이 보이도록 문구를 정리하는 데 초점을 둡니다.";
-    }
-    if (q.includes("클렌징") || q.includes("검증") || q.includes("오류") || q.includes("중복") || q.includes("결측")) {
-      return "클렌징·검증은 중복, 결측, 차대변 불일치, 기간 외 거래를 먼저 잡습니다. 예외는 삭제하지 않고 감사인이 판단하도록 남깁니다.";
-    }
-    if (q.includes("분석") || q.includes("ar") || q.includes("증감") || q.includes("이상치") || q.includes("추이")) {
-      return "분석·테스트는 전기 대비 변동, 월별 추이, 거래처별 변동을 보고 확인 필요 후보를 뽑습니다. 후보는 결론이 아니라 추가 질문 대상입니다.";
-    }
-    if (q.includes("조서") || q.includes("문서") || q.includes("결론") || q.includes("리뷰")) {
-      return "문서화 단계는 수행 절차와 숫자 근거를 조서 초안으로 정리합니다. 최종 결론과 승인은 감사인이 남기도록 설계했습니다.";
-    }
-    if (q.includes("챗봇") || q.includes("삼일")) {
-      return "삼일이 AI는 데모 흐름을 빠르게 안내하는 감사업무 챗봇입니다. 감사 판단은 대신하지 않고 확인할 절차와 증빙을 짚어줍니다.";
-    }
-    if (q.includes("업로드") || q.includes("매핑") || q.includes("엑셀") || q.includes("원장") || q.includes("gl")) {
-      return "업로드·매핑은 회사마다 다른 GL 헤더를 표준 스키마로 맞추는 단계입니다. 자동 제안 후 감사인이 매핑을 확정합니다.";
-    }
-    return "AuditPilot은 PBC, 업로드·매핑, 클렌징·검증, 분석·테스트, 문서화 흐름을 보여주는 감사업무 데모입니다. 궁금한 탭 이름으로 물어보면 바로 안내할게요.";
-  }
-
-  function compactAnswer(text) {
-    if (text.length <= 220) return text;
-    return text.slice(0, 217).trim() + "...";
-  }
-
   async function sendQuestion(text) {
     if (!text) return;
+    const bridge = doc.querySelector(".st-key-samili_bridge");
+    const bridgeInput = bridge && bridge.querySelector("input");
+    const bridgeSubmit = bridge && bridge.querySelector("button");
+    if (!bridgeInput || !bridgeSubmit) {
+      appendMessage("bot", "질문 전송 기능을 불러오지 못했습니다. 페이지를 새로고침해주세요.");
+      return;
+    }
     appendMessage("user", text);
     chatInput.value = "";
     chatInput.disabled = true;
-    const pending = appendMessage("bot", "질문을 분석하고 있어요...");
-    try {
-      const response = await fetch(assistantEndpoint, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({question: text})
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "API 요청에 실패했습니다.");
-      updateChatWithoutMovingCharacter(function () {
-        pending.textContent = payload.answer;
-        chatLog.scrollTop = chatLog.scrollHeight;
-      });
-    } catch (error) {
-      updateChatWithoutMovingCharacter(function () {
-        pending.textContent = "OpenAI 연결에 실패해 데모 답변으로 안내할게요. " + compactAnswer(localAssistantAnswer(text));
-        chatLog.scrollTop = chatLog.scrollHeight;
-      });
-    } finally {
-      chatInput.disabled = false;
-      chatInput.focus();
-    }
+    appendMessage("bot", "질문을 분석하고 있어요...");
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      parentWindow.HTMLInputElement.prototype,
+      "value"
+    ).set;
+    valueSetter.call(bridgeInput, text);
+    bridgeInput.dispatchEvent(new parentWindow.Event("input", {bubbles: true}));
+    bridgeInput.dispatchEvent(new parentWindow.Event("change", {bubbles: true}));
+    parentWindow.setTimeout(function () { bridgeSubmit.click(); }, 50);
   }
 
   chatForm.addEventListener("submit", async function (event) {
@@ -695,12 +662,53 @@ def render_legacy_assistant_widget() -> None:
     components.html(
         html
         .replace("__BOT_IMAGE__", BOT_IMAGE)
-        .replace("__ASSISTANT_PORT__", "8766"),
+        .replace("__CHAT_MESSAGES_JSON__", messages_json),
         height=0,
     )
 
 
 def render_assistant_widget() -> None:
+    history = st.session_state.setdefault(
+        "assistant_messages",
+        [
+            {
+                "role": "assistant",
+                "content": (
+                    "안녕하세요 삼일이 AI입니다! 질문을 감사업무 흐름에 맞춰 "
+                    "빠르게 안내할게요. 글이 가리면 저를 드래그해 옮길 수 있어요."
+                ),
+            }
+        ],
+    )
+    st.markdown(
+        "<style>.st-key-samili_bridge{display:none!important}</style>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key="samili_bridge"):
+        with st.form("samili_bridge_form", clear_on_submit=True):
+            question = st.text_input("삼일이 질문", key="samili_bridge_question")
+            submitted = st.form_submit_button("삼일이 질문 전송")
+
+    if submitted and question.strip():
+        clean_question = question.strip()
+        history.append({"role": "user", "content": clean_question})
+        try:
+            answer = ask_openai(clean_question)
+        except MissingOpenAIAPIKeyError:
+            answer = (
+                "OpenAI API 키가 설정되지 않았습니다. 환경변수, Streamlit Secrets "
+                "또는 로컬 .env에 OPENAI_API_KEY를 설정해주세요."
+            )
+        except OpenAIAPIError as exc:
+            answer = exc.user_message
+        except Exception:
+            answer = "삼일이 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        history.append({"role": "assistant", "content": answer})
+        st.rerun()
+
+    render_legacy_assistant_widget()
+    return
+
     history = st.session_state.setdefault(
         "assistant_messages",
         [
